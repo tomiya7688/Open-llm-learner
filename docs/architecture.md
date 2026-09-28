@@ -179,3 +179,20 @@ When deciding whether functionality belongs in the Core, use this test:
 If it defines flow execution, it may belong in the Core.
 
 If it performs work, it should normally be a MOD.
+
+
+## 10. Official distribution must be self-contained
+
+Official functionality must not require end users to manually install or configure a system Python environment.
+
+This applies even when an official MOD is implemented in Python.
+
+The intended distribution boundary is:
+
+- project developers may freely use Python internally for training and other official MOD implementations;
+- official Python-based MODs should be built/packaged into self-contained distributable artifacts;
+- the official Python Runner should provide or manage its own Python runtime;
+- the system Python installation, if any, must not be a prerequisite for normal use of official functionality;
+- user-authored Python MODs should execute through the managed Runner model rather than relying on an arbitrary global Python installation.
+
+The exact packaging technology is an implementation detail and is not fixed by the architecture.
