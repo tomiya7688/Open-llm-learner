@@ -59,6 +59,8 @@ Planned official runners:
 
 The Core itself does not need to know these languages.
 
+Official features must not require users to prepare a system Python environment. If an official MOD is implemented in Python, it should be distributed as a self-contained built package. The official Python Runner should likewise provide/manage its own runtime rather than requiring a preinstalled system Python.
+
 ## Two separate products on the same foundation
 
 ### Weight generation
@@ -121,4 +123,6 @@ See [docs/architecture.md](docs/architecture.md) and [docs/flow-v1-draft.md](doc
 
 ## License
 
-TBD.
+Open LLM Learner project-owned source code is licensed under the [Apache License 2.0](LICENSE).
+
+Third-party models, datasets, MODs, APIs, and derived artifacts remain subject to their own licenses and terms. Open LLM Learner does not grant or guarantee rights to third-party content. See [docs/licensing.md](docs/licensing.md).
