@@ -1,0 +1,45 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://open-llm-learner.local/schemas/project.schema.json",
+  "title":"Open LLM Learner project",
+  "type":"object",
+  "required":["format","format_version","id","name","entrypoints","mods"],
+  "properties":{
+    "format":{"const":"open-llm-learner.project"},
+    "format_version":{"const":1},
+    "id":{"type":"string","minLength":1},
+    "name":{"type":"string","minLength":1},
+    "entrypoints":{"type":"object","additionalProperties":{"type":"string"}},
+    "mods":{
+      "type":"array",
+      "items":{
+        "type":"object",
+        "required":["id","version"],
+        "properties":{
+          "id":{"type":"string"},
+          "version":{"type":"string"},
+          "digest":{"type":"string"},
+          "permissions":{"type":"array","items":{"type":"string"},"uniqueItems":true}
+        },
+        "additionalProperties":false
+      }
+    },
+    "capabilities":{
+      "type":"object",
+      "additionalProperties":{
+        "type":"object",
+        "required":["mod","action"],
+        "properties":{
+          "mod":{"type":"string"},
+          "action":{"type":"string"}
+        },
+        "additionalProperties":false
+      }
+    },
+    "configs":{"type":"object","additionalProperties":{"type":"string"}},
+    "refs":{"type":"object","additionalProperties":{"type":"string"}},
+    "schemas":{"type":"object","additionalProperties":{"type":"string"}},
+    "metadata":{"type":"object"}
+  },
+  "additionalProperties":false
+}
