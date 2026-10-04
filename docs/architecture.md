@@ -196,3 +196,16 @@ The intended distribution boundary is:
 - user-authored Python MODs should execute through the managed Runner model rather than relying on an arbitrary global Python installation.
 
 The exact packaging technology is an implementation detail and is not fixed by the architecture.
+
+
+## 11. Implementation language and wire format
+
+The application/Core is implemented in **Go**.
+
+The Core-to-local-MOD protocol uses **standard input / standard output with JSON messages**.
+
+The protocol must remain language-neutral. A MOD may be implemented in any language as long as it can participate in the protocol.
+
+Flow definitions are stored as **JSON**. YAML is not part of the Flow format.
+
+Human readability should be achieved through a small, explicit JSON schema and good tooling rather than by introducing a second canonical serialization format.
