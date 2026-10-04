@@ -145,3 +145,18 @@ v1 dependency resolution only needs to support installed package dependencies. A
 Official MODs and user MODs use the same manifest format and protocol.
 
 There is no private official-only MOD interface.
+
+
+## Discovery and resolution order
+
+For a project that requests a MOD id/version, the Core resolves packages in this order:
+
+1. project-local packages under `packages/mods/`;
+2. the user's application-managed MOD installation directory;
+3. official MODs bundled with the Open LLM Learner distribution.
+
+The first exact compatible match is used.
+
+Project-local packages intentionally have highest priority so a project can carry a pinned/private MOD without changing the global installation.
+
+A project may record a package digest. If a digest is present, the resolved package must match it or the Core must report a reproducibility/integrity error rather than silently substituting another package.
