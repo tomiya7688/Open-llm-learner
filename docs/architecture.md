@@ -227,3 +227,71 @@ The project file is the canonical saved state of a project and should contain or
 Execution logs, metrics, caches, and generated outputs are supplementary artifacts. They may help debugging or analysis, but they are not the primary source of project reproducibility.
 
 Saving the project means saving the reproducible project state.
+
+
+## 13. Artifact transport
+
+Flow values use two broad classes:
+
+- small values are passed directly as JSON-compatible values;
+- large or externally managed data is passed by reference.
+
+The Core must not copy large model weights, datasets, images, directories, or other large resources between nodes merely to satisfy Flow transport.
+
+A reference is opaque to the Core. The Core transports it while the producing and consuming MODs determine how to interpret it.
+
+The project format may store stable references to artifacts when they are part of the saved project state.
+
+## 14. Permission model
+
+MODs declare the capabilities / permissions they require.
+
+The initial security model is:
+
+1. a MOD declares requested permissions;
+2. the application presents relevant permission requests to the user;
+3. approved permissions are recorded in project/application state as appropriate;
+4. the Core enforces the execution boundary and does not rely solely on the MOD to self-police.
+
+The first implementation does not need to promise a perfect hostile-code sandbox. Stronger isolation mechanisms may be added later without changing the basic permission declaration model.
+
+## 15. Project directory and JSON file organization
+
+A project is represented as a directory with `project.json` as its entry point.
+
+Different JSON document types should use separate directories and filename conventions rather than being mixed into one large file.
+
+Initial convention:
+
+```text
+my-project/
+├─ project.json
+├─ flows/
+│  ├─ train.flow.json
+│  └─ agent.flow.json
+├─ configs/
+│  ├─ training.config.json
+│  └─ runtime.config.json
+├─ refs/
+│  ├─ models.ref.json
+│  └─ datasets.ref.json
+├─ schemas/
+│  └─ action.schema.json
+├─ scripts/
+│  └─ ...
+└─ packages/
+   └─ ...
+```
+
+The exact set of directories may grow as features are added. The important rule is that document type is obvious from both its location and filename suffix.
+
+Suggested suffixes:
+
+- `.flow.json` for Flow definitions;
+- `.config.json` for configuration;
+- `.ref.json` for external or artifact references;
+- `.schema.json` for JSON Schema documents.
+
+`project.json` is the canonical project manifest and references the other project documents.
+
+Usability takes priority over inventing a highly abstract storage format. The format should remain easy to inspect, diff, copy, and edit with ordinary tools.
