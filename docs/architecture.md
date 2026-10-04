@@ -209,3 +209,21 @@ The protocol must remain language-neutral. A MOD may be implemented in any langu
 Flow definitions are stored as **JSON**. YAML is not part of the Flow format.
 
 Human readability should be achieved through a small, explicit JSON schema and good tooling rather than by introducing a second canonical serialization format.
+
+
+## 12. Project file is the source of reproducibility
+
+Open LLM Learner does not require a separate reproducibility subsystem.
+
+The project file is the canonical saved state of a project and should contain or reference everything needed to reconstruct its intended behavior, including:
+
+- Flow definitions;
+- selected MODs and their versions;
+- user configuration and resolved settings;
+- model / dataset / artifact references;
+- script and package references;
+- relevant seeds or deterministic settings when used.
+
+Execution logs, metrics, caches, and generated outputs are supplementary artifacts. They may help debugging or analysis, but they are not the primary source of project reproducibility.
+
+Saving the project means saving the reproducible project state.
