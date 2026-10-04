@@ -4,6 +4,8 @@ Status: **draft**
 
 The Flow specification is intentionally domain-neutral. Terms such as LLM, training, image generation, and agent do not belong to the Core Flow model.
 
+The canonical Flow serialization is **JSON only**.
+
 ## 1. Core concepts
 
 Flow v1 is built from five concepts:
@@ -26,11 +28,13 @@ Invokes an API exposed by a MOD.
 
 Example:
 
-```yaml
-- id: read_source
-  type: mod
-  mod: official.file
-  action: read_text
+```json
+{
+  "id": "read_source",
+  "type": "mod",
+  "mod": "official.file",
+  "action": "read_text"
+}
 ```
 
 ### Core control nodes
@@ -53,17 +57,16 @@ A Node exposes input and output ports.
 
 Example:
 
-```yaml
-inputs:
-  path:
-    type: string
-  encoding:
-    type: string
-    optional: true
-
-outputs:
-  text:
-    type: string
+```json
+{
+  "inputs": {
+    "path": { "type": "string" },
+    "encoding": { "type": "string", "optional": true }
+  },
+  "outputs": {
+    "text": { "type": "string" }
+  }
+}
 ```
 
 ### Basic values
@@ -94,10 +97,15 @@ The Core transports the reference but does not need to understand whether it poi
 
 An Edge connects outputs to inputs.
 
-```yaml
-edges:
-  - from: read_file.text
-    to: process.input
+```json
+{
+  "edges": [
+    {
+      "from": "read_file.text",
+      "to": "process.input"
+    }
+  ]
+}
 ```
 
 Data dependencies also imply execution dependencies.
@@ -106,9 +114,10 @@ A Node becomes runnable when all required inputs and explicit dependencies are r
 
 For ordering without a data dependency, a Node may declare:
 
-```yaml
-after:
-  - previous_node
+```json
+{
+  "after": ["previous_node"]
+}
 ```
 
 ## 5. Parallel execution
@@ -159,15 +168,16 @@ A loop should require a finite guard such as `max_iterations`.
 
 Example:
 
-```yaml
-type: loop
-
-until:
-  value: "$state.finished"
-  op: "=="
-  compare: true
-
-max_iterations: 20
+```json
+{
+  "type": "loop",
+  "until": {
+    "value": "$state.finished",
+    "op": "==",
+    "compare": true
+  },
+  "max_iterations": 20
+}
 ```
 
 Infinite loops are not part of the v1 design.
@@ -252,10 +262,13 @@ Retry belongs to Flow control.
 
 Example:
 
-```yaml
-retry:
-  max: 3
-  delay_ms: 1000
+```json
+{
+  "retry": {
+    "max": 3,
+    "delay_ms": 1000
+  }
+}
 ```
 
 Domain-specific recovery logic belongs in a MOD or explicit Flow.
