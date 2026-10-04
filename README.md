@@ -2,6 +2,8 @@
 
 Open LLM Learner is an open-source project for building your own models and AI systems without locking users into one training stack, runtime, or agent framework.
 
+The application/Core is planned in **Go**. Flow files are **JSON**. Local MOD communication uses **stdio + JSON**.
+
 The project is built around a small core that implements **flows**. Actual capabilities are supplied by **MODs**.
 
 ## Goals
@@ -71,6 +73,7 @@ Examples include:
 
 - native/full fine-tuned weights;
 - LoRA / adapters;
+- dense and MoE model workflows;
 - merged or converted model artifacts;
 - runtime-oriented exports through exporter MODs.
 
@@ -119,7 +122,7 @@ AI requirements change quickly. The Core should therefore remain small and stabl
 
 Early design stage. Specifications are being drafted before implementation.
 
-See [docs/architecture.md](docs/architecture.md) and [docs/flow-v1-draft.md](docs/flow-v1-draft.md).
+See [docs/architecture.md](docs/architecture.md), [docs/flow-v1-draft.md](docs/flow-v1-draft.md), and [docs/moe-design-draft.md](docs/moe-design-draft.md).
 
 ## License
 
