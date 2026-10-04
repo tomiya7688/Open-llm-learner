@@ -122,7 +122,7 @@ AI requirements change quickly. The Core should therefore remain small and stabl
 
 Early design stage. Specifications are being drafted before implementation.
 
-See [docs/architecture.md](docs/architecture.md), [docs/flow-v1-draft.md](docs/flow-v1-draft.md), and [docs/moe-design-draft.md](docs/moe-design-draft.md).
+See [docs/architecture.md](docs/architecture.md), [docs/flow-v1-draft.md](docs/flow-v1-draft.md), [docs/mod-protocol-v1.md](docs/mod-protocol-v1.md), [docs/mod-package-v1.md](docs/mod-package-v1.md), [docs/project-format-v1.md](docs/project-format-v1.md), [docs/moe-design-draft.md](docs/moe-design-draft.md), and [docs/milestones.md](docs/milestones.md).
 
 ## License
 
