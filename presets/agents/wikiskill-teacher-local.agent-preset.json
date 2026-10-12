@@ -1,0 +1,56 @@
+{
+  "format":"open-llm-learner.agent-preset",
+  "format_version":1,
+  "id":"official.wikiskill.teacher-local",
+  "name":"WikiSkill Teacher to Local",
+  "version":"0.1.0",
+  "description":"Evolve transferable skills with a stronger teacher while keeping a smaller/local model as the execution target.",
+  "basis":{
+    "type":"research",
+    "title":"WikiSkill: Compiling Agent Experience into Persistent Knowledge for Skill Evolution",
+    "url":"https://arxiv.org/abs/2608.27454"
+  },
+  "model_roles":{
+    "executor":{"capability":"model.text.generate","binding":null},
+    "teacher":{"capability":"model.text.generate","binding":null},
+    "inference":{"capability":"model.text.generate","binding":"executor"},
+    "wiki_maintainer":{"capability":"model.text.generate","binding":"teacher"},
+    "skill_proposer":{"capability":"model.text.generate","binding":"teacher"}
+  },
+  "required_capabilities":[
+    "filesystem.read_text",
+    "filesystem.write_text",
+    "evaluation.score"
+  ],
+  "workspace":{
+    "raw":"agent/raw/",
+    "wiki":"agent/wiki/",
+    "wiki_patterns":"agent/wiki/patterns/",
+    "skills":"agent/skills/",
+    "skill_impact":"agent/wiki/skill-impact.jsonl"
+  },
+  "entrypoints":{
+    "run":"flows/agent/run.flow.json",
+    "evolve":"flows/agent/evolve.flow.json",
+    "validate":"flows/agent/validate.flow.json",
+    "test":"flows/agent/test.flow.json"
+  },
+  "policies":{
+    "raw_layer":"append_only",
+    "wiki_persistence":"never_rollback",
+    "wiki_access_during_evolution_rollout":false,
+    "skill_injection":"full_active_set",
+    "trace_sampling":"stratified_success_failure",
+    "proposal_scope":"single_skill_atomic",
+    "skill_acceptance":"executor_validation_score_strictly_improves",
+    "rejected_skill_update":"rollback",
+    "record_skill_impact":true,
+    "skill_owner":"project_not_teacher"
+  },
+  "defaults":{
+    "teacher_required_only_for_evolution":true
+  },
+  "metadata":{
+    "preset_tier":"cross_model_transfer"
+  }
+}
