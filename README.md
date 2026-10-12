@@ -15,6 +15,7 @@ Open LLM Learner aims to make it practical for individuals and organizations to:
 - export weights for use in existing runtimes and applications;
 - build AI packages that combine a model with tools, scripts, prompts, and behavior;
 - create anything from character LLMs to small task-specialized coding agents;
+- use generative models, decision/judgment models, and non-Transformer model architectures through the same Flow/MOD foundation;
 - replace official functionality with community or private implementations when more advanced behavior is needed.
 
 Large-model workflows should be possible by design, even when the reference project cannot quality-assure every large-scale hardware configuration.
@@ -122,7 +123,7 @@ AI requirements change quickly. The Core should therefore remain small and stabl
 
 Early design stage. Specifications are being drafted before implementation.
 
-See [docs/architecture.md](docs/architecture.md), [docs/flow-v1-draft.md](docs/flow-v1-draft.md), [docs/mod-protocol-v1.md](docs/mod-protocol-v1.md), [docs/mod-package-v1.md](docs/mod-package-v1.md), [docs/project-format-v1.md](docs/project-format-v1.md), [docs/moe-design-draft.md](docs/moe-design-draft.md), and [docs/milestones.md](docs/milestones.md).
+See [docs/architecture.md](docs/architecture.md), [docs/flow-v1-draft.md](docs/flow-v1-draft.md), [docs/mod-protocol-v1.md](docs/mod-protocol-v1.md), [docs/mod-package-v1.md](docs/mod-package-v1.md), [docs/project-format-v1.md](docs/project-format-v1.md), [docs/moe-design-draft.md](docs/moe-design-draft.md), [docs/model-capabilities-draft.md](docs/model-capabilities-draft.md), and [docs/milestones.md](docs/milestones.md).
 
 ## License
 
