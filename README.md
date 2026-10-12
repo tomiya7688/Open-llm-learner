@@ -97,6 +97,18 @@ An AI package may combine:
 
 The model weights do not have to be produced by Open LLM Learner.
 
+## Agent presets
+
+The Agent Builder can provide research- and product-derived presets that expand into ordinary editable Projects/Flows.
+
+Initial WikiSkill-derived presets:
+
+- **WikiSkill Standard** — persistent Raw/Wiki/Skills layers with validation-gated skill evolution;
+- **WikiSkill Local Lite** — lower-cost local-first adaptation;
+- **WikiSkill Teacher to Local** — evolve skills with a stronger teacher and execute them with a smaller/local model.
+
+See [docs/agent-presets-v1-draft.md](docs/agent-presets-v1-draft.md).
+
 ## Planned official MODs
 
 Initial/reference MOD ideas include:
@@ -126,7 +138,7 @@ AI requirements change quickly. The Core should therefore remain small and stabl
 
 Early design stage. Specifications are being drafted before implementation.
 
-See [docs/architecture.md](docs/architecture.md), [docs/flow-v1-draft.md](docs/flow-v1-draft.md), [docs/mod-protocol-v1.md](docs/mod-protocol-v1.md), [docs/mod-package-v1.md](docs/mod-package-v1.md), [docs/project-format-v1.md](docs/project-format-v1.md), [docs/moe-design-draft.md](docs/moe-design-draft.md), [docs/model-capabilities-draft.md](docs/model-capabilities-draft.md), and [docs/milestones.md](docs/milestones.md).
+See [docs/architecture.md](docs/architecture.md), [docs/flow-v1-draft.md](docs/flow-v1-draft.md), [docs/mod-protocol-v1.md](docs/mod-protocol-v1.md), [docs/mod-package-v1.md](docs/mod-package-v1.md), [docs/project-format-v1.md](docs/project-format-v1.md), [docs/moe-design-draft.md](docs/moe-design-draft.md), [docs/model-capabilities-draft.md](docs/model-capabilities-draft.md), [docs/agent-presets-v1-draft.md](docs/agent-presets-v1-draft.md), and [docs/milestones.md](docs/milestones.md).
 
 ## License
 
