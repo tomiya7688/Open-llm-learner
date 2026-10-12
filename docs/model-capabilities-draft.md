@@ -11,6 +11,8 @@ Open LLM Learner must not assume that every model is:
 
 The Core and project format should work with models through declared capabilities.
 
+Open LLM Learner remains text-centered: text-to-text is the primary target. A model may be supported when at least one side of its interface is text, but models with neither text input nor text output are outside first-class project scope.
+
 ## Principle
 
 A model implementation exposes what it can do.
@@ -18,12 +20,13 @@ A model implementation exposes what it can do.
 Examples:
 
 - text generation;
-- typed decision / judgment;
-- embedding;
-- ranking / scoring;
-- image understanding;
-- multimodal generation;
-- other future model interfaces.
+- typed decision / judgment from text-bearing context;
+- text embeddings;
+- text ranking / scoring;
+- image-to-text understanding;
+- text-to-image generation;
+- multimodal-to-text generation;
+- other future interfaces that remain connected to text.
 
 Architecture names such as Transformer, state-space model, recurrent model, hybrid model, or another future design are implementation metadata, not Core behavior.
 
@@ -192,3 +195,61 @@ Vision model
 All three remain normal MOD capabilities connected by Flow.
 
 This is preferred over forcing every task through a single generative LLM.
+
+
+## Scope tiers
+
+### Tier 1: primary
+
+Text-to-text and closely related language-model tasks.
+
+Examples:
+
+- chat / completion;
+- code generation;
+- rewriting;
+- structured text output;
+- text-driven decision models;
+- text-driven agents.
+
+This is the main design, testing, documentation, and UX target.
+
+### Tier 2: supported when useful
+
+At least one side of the model interface is text.
+
+Examples:
+
+- text -> image;
+- image -> text;
+- image + text -> text;
+- text -> vector;
+- text -> bounded decision.
+
+These may be implemented by official reference MODs, community MODs, or external adapters.
+
+They must not force non-text-specific concepts into the Core.
+
+### Tier 3: out of first-class scope
+
+Neither side is text.
+
+Examples:
+
+- image -> image;
+- audio -> audio;
+- image -> audio;
+- arbitrary vision-only or signal-processing models.
+
+Generic MODs may still technically invoke such systems, but Weight Builder and model-specific UX do not need to support them.
+
+## Image generation
+
+Image generation is not a primary model-training target.
+
+Two routes are appropriate:
+
+1. lightweight/reference text-to-image support, including LLM-based image generation where practical;
+2. delegation to external systems such as ComfyUI for advanced workflows.
+
+The project should avoid becoming a general image-model training suite.
