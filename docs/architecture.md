@@ -295,3 +295,18 @@ Suggested suffixes:
 `project.json` is the canonical project manifest and references the other project documents.
 
 Usability takes priority over inventing a highly abstract storage format. The format should remain easy to inspect, diff, copy, and edit with ordinary tools.
+
+
+## 16. Models are capability providers, not necessarily text generators
+
+Open LLM Learner must not assume a model is a Transformer, autoregressive model, or text generator.
+
+Model architecture is an implementation detail owned by Runtime, Training, and other model-related MODs.
+
+The Core and Flow interact with semantic capabilities such as text generation, typed decision/judgment, embedding, or scoring.
+
+This allows judgment models, state-space/recurrent/hybrid language models, custom research architectures, and future model types to participate without changing the Core.
+
+A single AI Package may use multiple specialized models: for example a judgment model for action selection and a generative model for writing.
+
+See `docs/model-capabilities-draft.md`.
