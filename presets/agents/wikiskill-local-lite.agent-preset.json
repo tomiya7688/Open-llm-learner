@@ -1,0 +1,54 @@
+{
+  "format":"open-llm-learner.agent-preset",
+  "format_version":1,
+  "id":"official.wikiskill.local-lite",
+  "name":"WikiSkill Local Lite",
+  "version":"0.1.0",
+  "description":"Lower-cost local-first WikiSkill-derived preset for small models and personal hardware.",
+  "basis":{
+    "type":"research",
+    "title":"WikiSkill: Compiling Agent Experience into Persistent Knowledge for Skill Evolution",
+    "url":"https://arxiv.org/abs/2608.27454"
+  },
+  "model_roles":{
+    "primary":{"capability":"model.text.generate","binding":null},
+    "inference":{"capability":"model.text.generate","binding":"primary"},
+    "wiki_maintainer":{"capability":"model.text.generate","binding":"primary"},
+    "skill_proposer":{"capability":"model.text.generate","binding":"primary"}
+  },
+  "required_capabilities":[
+    "filesystem.read_text",
+    "filesystem.write_text",
+    "evaluation.score"
+  ],
+  "workspace":{
+    "raw":"agent/raw/",
+    "wiki":"agent/wiki/",
+    "wiki_patterns":"agent/wiki/patterns/",
+    "skills":"agent/skills/",
+    "skill_impact":"agent/wiki/skill-impact.jsonl"
+  },
+  "entrypoints":{
+    "run":"flows/agent/run.flow.json",
+    "evolve":"flows/agent/evolve.flow.json",
+    "validate":"flows/agent/validate.flow.json"
+  },
+  "policies":{
+    "raw_layer":"append_only",
+    "wiki_persistence":"never_rollback",
+    "wiki_access_during_evolution_rollout":false,
+    "skill_injection":"full_active_set",
+    "trace_sampling":"small_stratified_success_failure",
+    "proposal_scope":"single_skill_atomic",
+    "skill_acceptance":"validation_score_strictly_improves",
+    "rejected_skill_update":"rollback",
+    "record_skill_impact":true,
+    "test_split":"optional_until_final_evaluation"
+  },
+  "defaults":{
+    "reuse_primary_model_for_evolution_roles":true
+  },
+  "metadata":{
+    "preset_tier":"local_product_adaptation"
+  }
+}
