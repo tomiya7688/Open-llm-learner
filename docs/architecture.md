@@ -310,3 +310,49 @@ This allows judgment models, state-space/recurrent/hybrid language models, custo
 A single AI Package may use multiple specialized models: for example a judgment model for action selection and a generative model for writing.
 
 See `docs/model-capabilities-draft.md`.
+
+
+## 17. Model scope is text-centered
+
+Open LLM Learner is primarily a **text-to-text model creation and AI construction tool**.
+
+The model abstraction remains architecture-neutral, but project scope is intentionally narrower than "all machine learning models."
+
+### Primary scope
+
+- text -> text generation;
+- text/chat -> structured decision or score;
+- text-bearing multimodal input -> text;
+- other model tasks closely connected to language-model workflows.
+
+### Secondary / optional scope
+
+Models where at least one side of the model interface is text may be supported when useful to an LLM workflow.
+
+Examples:
+
+- text -> image generation;
+- image -> text interpretation;
+- image + text -> text;
+- text -> embedding/vector;
+- text -> typed judgment.
+
+These are supported as extensions, not as the main product target.
+
+LLM-based image generation may receive lightweight/reference support when it can fit naturally into the MOD model.
+
+### Out of scope
+
+Models whose **input and output are both non-text** are not a project target.
+
+Examples include:
+
+- image -> image model pipelines;
+- audio -> audio models;
+- image -> audio;
+- pure vision-to-vector systems with no text-facing interface;
+- general-purpose non-language ML pipelines.
+
+Such capabilities may still be reachable through external adapters or generic MODs, but Open LLM Learner does not need first-class Weight Builder, training UX, or quality guarantees for them.
+
+This boundary prevents the project from growing into a general ML studio while keeping language-model-adjacent multimodal features possible.
