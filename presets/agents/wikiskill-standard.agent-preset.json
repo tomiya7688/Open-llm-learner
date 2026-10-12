@@ -1,0 +1,51 @@
+{
+  "format":"open-llm-learner.agent-preset",
+  "format_version":1,
+  "id":"official.wikiskill.standard",
+  "name":"WikiSkill Standard",
+  "version":"0.1.0",
+  "description":"Research-oriented persistent wiki + skill evolution preset derived from WikiSkill.",
+  "basis":{
+    "type":"research",
+    "title":"WikiSkill: Compiling Agent Experience into Persistent Knowledge for Skill Evolution",
+    "url":"https://arxiv.org/abs/2608.27454"
+  },
+  "model_roles":{
+    "inference":{"capability":"model.text.generate","binding":null},
+    "wiki_maintainer":{"capability":"model.text.generate","binding":null},
+    "skill_proposer":{"capability":"model.text.generate","binding":null}
+  },
+  "required_capabilities":[
+    "filesystem.read_text",
+    "filesystem.write_text",
+    "evaluation.score"
+  ],
+  "workspace":{
+    "raw":"agent/raw/",
+    "wiki":"agent/wiki/",
+    "wiki_patterns":"agent/wiki/patterns/",
+    "skills":"agent/skills/",
+    "skill_impact":"agent/wiki/skill-impact.jsonl"
+  },
+  "entrypoints":{
+    "run":"flows/agent/run.flow.json",
+    "evolve":"flows/agent/evolve.flow.json",
+    "validate":"flows/agent/validate.flow.json",
+    "test":"flows/agent/test.flow.json"
+  },
+  "policies":{
+    "raw_layer":"append_only",
+    "wiki_persistence":"never_rollback",
+    "wiki_access_during_evolution_rollout":false,
+    "skill_injection":"full_active_set",
+    "trace_sampling":"stratified_success_failure",
+    "proposal_scope":"single_skill_atomic",
+    "skill_acceptance":"validation_score_strictly_improves",
+    "rejected_skill_update":"rollback",
+    "record_skill_impact":true
+  },
+  "defaults":{},
+  "metadata":{
+    "preset_tier":"research_faithful_product_adaptation"
+  }
+}
