@@ -16,9 +16,12 @@ Open LLM Learner aims to make it practical for individuals and organizations to:
 - build AI packages that combine a model with tools, scripts, prompts, and behavior;
 - create anything from character LLMs to small task-specialized coding agents;
 - use generative models, decision/judgment models, and non-Transformer model architectures through the same Flow/MOD foundation;
+- primarily target text-to-text models while allowing secondary model capabilities where either the input or output is text;
 - replace official functionality with community or private implementations when more advanced behavior is needed.
 
 Large-model workflows should be possible by design, even when the reference project cannot quality-assure every large-scale hardware configuration.
+
+Models whose input and output are both non-text are outside the primary project scope. Image/image, audio/audio, and other fully non-text pipelines should normally be delegated to external tools or adapters. Text-to-image, image-to-text, multimodal-to-text, and similar text-connected capabilities may be supported as secondary features.
 
 ## Core idea
 
