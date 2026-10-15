@@ -104,6 +104,26 @@ An AI package may combine:
 
 The model weights do not have to be produced by Open LLM Learner.
 
+## Official autonomous agent
+
+Open LLM Learner ships an official autonomous agent built entirely on the public Flow/MOD/Capability APIs.
+
+It is intended to support goal-driven multi-step work:
+
+```text
+Goal
+ -> plan / decide
+ -> call capability
+ -> observe result
+ -> revise / retry
+ -> verify
+ -> finish
+```
+
+The agent supports pause/resume/cancel/user steering, permission-controlled operations, execution budgets, and interchangeable model roles. A Coding Agent preset and a Local Lite preset are planned as reference implementations.
+
+See [docs/official-autonomous-agent-draft.md](docs/official-autonomous-agent-draft.md).
+
 ## Agent presets
 
 The Agent Builder can provide research- and product-derived presets that expand into ordinary editable Projects/Flows.
