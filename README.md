@@ -78,6 +78,7 @@ Examples include:
 - native/full fine-tuned weights;
 - LoRA / adapters;
 - dense and MoE model workflows;
+- low-memory model execution and adapter training through AirLLM-inspired layer/expert streaming strategies;
 - merged or converted model artifacts;
 - runtime-oriented exports through exporter MODs.
 
@@ -138,7 +139,7 @@ AI requirements change quickly. The Core should therefore remain small and stabl
 
 Early design stage. Specifications are being drafted before implementation.
 
-See [docs/architecture.md](docs/architecture.md), [docs/flow-v1-draft.md](docs/flow-v1-draft.md), [docs/mod-protocol-v1.md](docs/mod-protocol-v1.md), [docs/mod-package-v1.md](docs/mod-package-v1.md), [docs/project-format-v1.md](docs/project-format-v1.md), [docs/moe-design-draft.md](docs/moe-design-draft.md), [docs/model-capabilities-draft.md](docs/model-capabilities-draft.md), [docs/agent-presets-v1-draft.md](docs/agent-presets-v1-draft.md), and [docs/milestones.md](docs/milestones.md).
+See [docs/architecture.md](docs/architecture.md), [docs/flow-v1-draft.md](docs/flow-v1-draft.md), [docs/mod-protocol-v1.md](docs/mod-protocol-v1.md), [docs/mod-package-v1.md](docs/mod-package-v1.md), [docs/project-format-v1.md](docs/project-format-v1.md), [docs/moe-design-draft.md](docs/moe-design-draft.md), [docs/model-capabilities-draft.md](docs/model-capabilities-draft.md), [docs/agent-presets-v1-draft.md](docs/agent-presets-v1-draft.md), [docs/low-memory-streaming-draft.md](docs/low-memory-streaming-draft.md), and [docs/milestones.md](docs/milestones.md).
 
 ## License
 
