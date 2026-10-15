@@ -258,3 +258,21 @@ Package
 ```
 
 Runtime exporters are discoverable MODs, so community exporters can add additional applications without changing the Core.
+
+## ONNX Runtime target
+
+ONNX is a first-class Runtime Export target.
+
+A Runtime Exporter may produce:
+
+- `.onnx` graph;
+- external tensor data files;
+- ONNX Runtime configuration;
+- optional declared Custom Op dependencies;
+- Execution Provider recommendations.
+
+Standard ONNX operators/functions should be preferred where possible.
+
+When Custom Ops are required, export metadata must declare them explicitly. The Package may bundle the required native library or bind to a compatible installed provider.
+
+An ONNX Artifact with unavailable Custom Ops must fail preflight rather than silently changing behavior.
