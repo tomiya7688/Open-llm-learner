@@ -397,3 +397,22 @@ Runtime Export creates a derived artifact from canonical weights. It must not de
 Runtime Export and Runtime Install are separate operations: export can generate a target-ready folder without modifying an installed external application; install/import is an optional permission-controlled action.
 
 See `docs/runtime-export-v1-draft.md`.
+
+## 20. Model artifact formats are pluggable and typed
+
+Open LLM Learner distinguishes weight containers, framework checkpoints, executable graphs, and runtime-derived artifacts.
+
+Initial first-class formats include:
+
+- Safetensors as the preferred portable weight container;
+- PyTorch `.pt/.pth` for compatibility, using safe tensor/state_dict loading by default;
+- ONNX as an executable graph artifact;
+- runtime-derived formats such as GGUF and AirLLM prepared representations.
+
+The Core must not assume every model Artifact is only a set of weights.
+
+Import/export/runtime MODs own format-specific behavior.
+
+ONNX Custom Ops are explicit Runtime/Package dependencies rather than arbitrary code implicitly trusted by the Core.
+
+See `docs/model-artifact-formats-v1-draft.md`.
