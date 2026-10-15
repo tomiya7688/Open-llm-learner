@@ -356,3 +356,25 @@ Examples include:
 Such capabilities may still be reachable through external adapters or generic MODs, but Open LLM Learner does not need first-class Weight Builder, training UX, or quality guarantees for them.
 
 This boundary prevents the project from growing into a general ML studio while keeping language-model-adjacent multimodal features possible.
+
+
+## 18. Weight artifacts and Packages are independent distribution products
+
+Open LLM Learner supports distributing a model as a **weight artifact alone** or as part of a **Package**.
+
+A weight artifact is intentionally portable and may be used entirely outside Open LLM Learner.
+
+A Package may bind that model to:
+
+- a Runtime MOD;
+- runtime/memory configuration;
+- derived runtime-prepared artifacts;
+- capability bindings;
+- Flow;
+- tools/operations;
+- scripts;
+- filters.
+
+Runtime-specific preparation such as AirLLM-style layer/expert sharding must not replace or redefine the canonical trained weights. It is a derived execution artifact that can be regenerated from the canonical model.
+
+This keeps model ownership/export independent from Open LLM Learner while still allowing highly optimized self-contained Packages.
