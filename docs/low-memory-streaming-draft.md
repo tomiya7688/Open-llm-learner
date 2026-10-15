@@ -208,3 +208,86 @@ The default `auto` strategy should prefer resident execution when the model comf
 The reference project may test only hardware available to maintainers.
 
 The architecture must permit very large models, but advertised working model/hardware combinations require measured validation.
+
+
+## Distribution and packaging
+
+Low-memory streaming is not only a training/runtime implementation detail. It may also be part of how an Open LLM Learner Package is distributed and executed.
+
+Open LLM Learner keeps two independent distribution paths:
+
+### Weight-only distribution
+
+A user may export only the portable model artifact:
+
+- native/full model weights;
+- LoRA/adapter weights;
+- merged weights;
+- other standard/exported formats.
+
+A weight-only artifact must not require Open LLM Learner or an AirLLM-style runtime unless the chosen external format itself has such a requirement.
+
+The original portable weight artifact remains the canonical model artifact.
+
+### Package distribution
+
+A Package may additionally declare:
+
+- bundled model weights or an external model reference;
+- the Runtime MOD that should execute the model;
+- Runtime capability bindings;
+- memory strategy such as resident/layer_stream/expert_stream/auto;
+- prepared layer/expert artifacts;
+- cache/preparation metadata;
+- Flow, tools, scripts, filters, and other AI-package features.
+
+Example conceptual package configuration:
+
+```json
+{
+  "model": {
+    "ref": "models/main.ref.json"
+  },
+  "runtime": {
+    "mod": "official.runtime.streaming",
+    "memory": {
+      "mode": "auto"
+    },
+    "prepared_artifact": "refs/main-streamed-runtime.ref.json"
+  }
+}
+```
+
+A Package may therefore be optimized for a target machine without changing the underlying model weights.
+
+## Prepared runtime artifacts are derived artifacts
+
+Layer shards, expert indexes, mmap layouts, caches, and other streaming-specific representations are **derived runtime artifacts**.
+
+They are not the canonical trained weights.
+
+This distinction is important:
+
+```text
+Canonical Weight Artifact
+        |
+        +----> standard external export
+        |
+        +----> Runtime preparation
+                  |
+                  +----> layer/expert prepared artifact
+                            |
+                            +----> Package
+```
+
+A prepared artifact should retain a source digest/reference so it can be invalidated or regenerated if the canonical weights change.
+
+## Portable vs optimized packages
+
+Package creation may offer:
+
+- **Portable**: include/reference canonical weights and prepare the runtime representation on the destination machine;
+- **Optimized**: bundle a prepared runtime artifact for a known target/runtime;
+- **Hybrid**: include canonical weights plus optional prepared cache.
+
+The Package Builder should expose this as a deployment choice rather than making low-memory streaming mandatory.
