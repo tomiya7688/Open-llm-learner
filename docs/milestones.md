@@ -103,3 +103,25 @@ input/context
 v1.0 does not require the project to quality-assure every large-model hardware configuration.
 
 The architecture must allow large models and MoE workflows, while reference quality assurance may remain limited to hardware actually available to the maintainers.
+
+
+## v1.0 autonomous-agent requirement
+
+The official autonomous agent is a mandatory v1.0 feature.
+
+Acceptance requires a multi-step task to proceed without a new user prompt between ordinary steps:
+
+- receive a goal;
+- plan/select actions;
+- inspect workspace/context;
+- call capabilities;
+- observe results;
+- revise/retry after failures;
+- verify completion;
+- produce a final result.
+
+The agent must support pause/resume/cancel/user steering and must obey project permission and execution-budget limits.
+
+A coding/CI-fix reference task is the primary acceptance case.
+
+See `docs/official-autonomous-agent-draft.md`.
