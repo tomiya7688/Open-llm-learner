@@ -164,6 +164,8 @@ AI requirements change quickly. The Core should therefore remain small and stabl
 
 **Core = flow. MOD = capability.**
 
+For local autonomous execution, the Core also provides host-level safety: **Emergency Stop**, cancellation propagation, and configurable RAM/VRAM headroom. Memory-aware runtimes may automatically fall back to CPU offload, layer streaming, expert streaming, or partitioned training instead of exhausting the machine.
+
 ## Status
 
 Early design stage. Specifications are being drafted before implementation.
