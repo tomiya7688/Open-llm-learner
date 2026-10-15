@@ -378,3 +378,22 @@ A Package may bind that model to:
 Runtime-specific preparation such as AirLLM-style layer/expert sharding must not replace or redefine the canonical trained weights. It is a derived execution artifact that can be regenerated from the canonical model.
 
 This keeps model ownership/export independent from Open LLM Learner while still allowing highly optimized self-contained Packages.
+
+
+## 19. Runtime Export is a separate distribution path
+
+Open LLM Learner distinguishes:
+
+1. **Weight Export** — portable model weights/adapters;
+2. **Runtime Export** — a target application's expected model format, layout, configuration, and metadata;
+3. **Package Export** — a complete Open LLM Learner AI package containing model/runtime bindings plus Flow, operations, scripts, filters, and related assets.
+
+Runtime-specific conversion is implemented by Exporter MODs.
+
+The Core must not contain Ollama, LM Studio, llama.cpp, AirLLM, or other target-specific export logic.
+
+Runtime Export creates a derived artifact from canonical weights. It must not destroy or replace the canonical model artifact.
+
+Runtime Export and Runtime Install are separate operations: export can generate a target-ready folder without modifying an installed external application; install/import is an optional permission-controlled action.
+
+See `docs/runtime-export-v1-draft.md`.
