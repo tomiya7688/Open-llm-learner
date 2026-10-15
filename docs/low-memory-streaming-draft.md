@@ -291,3 +291,155 @@ Package creation may offer:
 - **Hybrid**: include canonical weights plus optional prepared cache.
 
 The Package Builder should expose this as a deployment choice rather than making low-memory streaming mandatory.
+
+
+## Three separate AirLLM-related paths
+
+Open LLM Learner intentionally separates three concerns.
+
+### 1. Native Open LLM Learner Streaming Runtime
+
+This is an official MOD implemented and maintained as part of Open LLM Learner.
+
+Its behavior is inspired by layer/expert streaming, but its internal file layout and implementation are owned by this project.
+
+Goals:
+
+- stable Open LLM Learner Runtime capability contract;
+- dense layer streaming;
+- sparse MoE expert streaming;
+- automatic memory planning;
+- support for Project/Package prepared artifacts;
+- freedom to change implementation without depending on AirLLM internals.
+
+This path must not require the AirLLM Python package.
+
+### 2. AirLLM Compatibility / Preparation
+
+A separate compatibility MOD prepares a canonical model for use by **AirLLM itself**.
+
+The compatibility layer should prefer invoking the pinned AirLLM implementation's own preparation/splitting path instead of reimplementing an undocumented shard layout.
+
+AirLLM currently accepts a Hugging Face repository id or local model path and decomposes the original model layer-wise on first use. It also exposes `layer_shards_saving_path`, optional compression, prefetching, and `delete_original`.
+
+The compatibility MOD therefore owns actions conceptually similar to:
+
+- `airllm.prepare`
+- `airllm.run`
+- `airllm.inspect`
+
+Example preparation config:
+
+```json
+{
+  "source_model": "refs/model.ref.json",
+  "airllm": {
+    "version": "pinned-version",
+    "layer_shards_path": "artifacts/airllm/main/",
+    "compression": null,
+    "prefetching": true,
+    "delete_original": false
+  }
+}
+```
+
+Output:
+
+```json
+{
+  "prepared_model": {
+    "$ref": "artifact://airllm-prepared-model"
+  },
+  "source_digest": "sha256:...",
+  "airllm_version": "..."
+}
+```
+
+The prepared representation is a derived runtime artifact. The canonical source weights remain separately exportable.
+
+A Package may choose either:
+
+- the native Open LLM Learner streaming Runtime; or
+- the AirLLM compatibility Runtime.
+
+The two are not required to share an internal shard format.
+
+### 3. Partitioned Streaming Training
+
+Training must be able to use partitioned/streamed base-model execution as a first-class Training MOD strategy.
+
+This is broader than inference streaming.
+
+The training engine divides the base model into executable partitions and schedules:
+
+```text
+partition 0 load
+  -> forward
+  -> retain/offload required state
+  -> next partition
+  ...
+  -> loss
+  -> backward schedule
+  -> partition/gradient/update handling
+```
+
+The exact backward strategy depends on the training type.
+
+#### Adapter/LoRA mode
+
+For LoRA or other small trainable adapters:
+
+- base partitions stay frozen;
+- base partitions stream through device memory;
+- adapter parameters remain resident when practical;
+- optimizer state exists only for trainable adapter parameters;
+- output is the same portable adapter artifact as normal LoRA.
+
+This is the simplest and first production target.
+
+#### Native/full-weight mode
+
+For native/full fine-tuning:
+
+- base parameters themselves are trainable;
+- gradients and optimizer state cannot be treated like frozen streaming weights;
+- a partition must be loaded, participate in forward/backward, be updated, and persist its new state;
+- optimizer/gradient state may need CPU/NVMe offload or partitioned persistence;
+- correctness across partition boundaries must be validated against a normal full-resident reference run.
+
+A possible implementation schedule is:
+
+```text
+forward partitions
+  -> offload activations/checkpoints as required
+  -> backward partitions in reverse
+  -> load trainable partition + optimizer state
+  -> apply update
+  -> write updated partition back
+  -> release memory
+```
+
+Alternative schedules are allowed if mathematically equivalent for the selected optimizer/training recipe.
+
+The Training MOD must explicitly report whether a mode is:
+
+- exact/equivalent full fine-tuning;
+- staged/layer-wise approximation;
+- adapter-only training.
+
+The UI must not label an approximate staged method as ordinary Full Fine-tuning.
+
+## AirLLM third-party boundary
+
+AirLLM compatibility support is a third-party integration.
+
+The Open LLM Learner native streaming implementation is independent.
+
+An AirLLM-compatible prepared artifact should record:
+
+- AirLLM package/version;
+- source model digest;
+- preparation options;
+- target platform/runtime metadata when relevant.
+
+This protects against format/behavior drift between AirLLM versions.
