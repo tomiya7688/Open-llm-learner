@@ -121,6 +121,9 @@ Initial/reference MOD ideas include:
 - CRC checking;
 - command execution;
 - LoRA adapter attachment;
+- native low-memory layer/expert streaming runtime;
+- AirLLM Compatibility Preparer and Runtime Adapter;
+- partitioned streaming training for LoRA and native fine-tuning;
 - image semantic interpretation;
 - simple input/output content filters;
 - simple SDXL image generation;
