@@ -134,3 +134,37 @@ The Core treats the referenced resource as opaque.
 Relative project paths are preferred when practical.
 
 External absolute paths and remote URIs are allowed, but naturally reduce portability.
+
+
+## Resource policy
+
+A project may reference a resource policy in a config document.
+
+Example:
+
+```json
+{
+  "resources": {
+    "ram": {
+      "mode": "auto",
+      "max_fraction": 0.90,
+      "min_free_bytes": null
+    },
+    "vram": {
+      "mode": "auto",
+      "max_fraction": 0.90,
+      "min_free_bytes": null
+    },
+    "disk_cache": {
+      "max_bytes": null
+    },
+    "heavy_task_concurrency": 1
+  }
+}
+```
+
+The numeric values above are examples, not fixed defaults.
+
+Auto mode must preserve RAM/VRAM headroom and must not target 100% usage.
+
+Runtime/Training MODs may receive these constraints and respond with a lower-memory plan.
