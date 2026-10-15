@@ -416,3 +416,21 @@ Import/export/runtime MODs own format-specific behavior.
 ONNX Custom Ops are explicit Runtime/Package dependencies rather than arbitrary code implicitly trusted by the Core.
 
 See `docs/model-artifact-formats-v1-draft.md`.
+
+## 21. Host resource safety is a Core execution concern
+
+Open LLM Learner is local-first. The Core therefore owns host-level execution safety:
+
+- cancellation propagation;
+- emergency stop / process-tree termination;
+- RAM/VRAM headroom budgets;
+- heavy-task admission control;
+- task priority and safe preemption/retreat where supported.
+
+The Core does not implement model offload/streaming itself. It supplies resource constraints to Runtime/Training MODs and coordinates execution.
+
+Memory-aware MODs may expose lower-memory plans such as resident, CPU offload, layer streaming, expert streaming, or partitioned training.
+
+Auto mode must preserve host headroom rather than target 100% RAM/VRAM utilization.
+
+See `docs/resource-safety-draft.md`.
