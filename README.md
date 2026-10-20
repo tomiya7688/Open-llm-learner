@@ -179,9 +179,20 @@ Open LLM Learner project-owned source code is licensed under the [Apache License
 Third-party models, datasets, MODs, APIs, and derived artifacts remain subject to their own licenses and terms. Open LLM Learner does not grant or guarantee rights to third-party content. See [docs/licensing.md](docs/licensing.md).
 
 
-## 利用者向けドキュメント
+## User documentation / 利用者向けドキュメント
 
-- [用語集](docs/user-glossary-ja.md)
-- [GUI / Shell 機能ガイド](docs/user-ui-cli-guide-ja.md)
+### 日本語
 
-未実装機能は Planned、試験的機能は Experimental と明示し、実装済みに見えないようにします。
+- [日本語ドキュメント](docs/jp/README.md)
+- [用語集](docs/jp/glossary.md)
+- [GUIガイド](docs/jp/gui.md)
+- [Shell / CLIガイド](docs/jp/shell.md)
+
+### English
+
+- [English documentation](docs/en/README.md)
+- [Glossary](docs/en/glossary.md)
+- [GUI Guide](docs/en/gui.md)
+- [Shell / CLI Guide](docs/en/shell.md)
+
+User-facing documentation is language-complete: Japanese readers can use the Japanese GUI and Shell guides without switching to English documentation, and vice versa.
