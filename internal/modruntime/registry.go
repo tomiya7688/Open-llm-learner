@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/tomiya7688/Open-llm-learner/internal/flow"
@@ -15,20 +16,24 @@ import (
 	"github.com/tomiya7688/Open-llm-learner/internal/permission"
 	"github.com/tomiya7688/Open-llm-learner/internal/project"
 	"github.com/tomiya7688/Open-llm-learner/internal/protocol"
+	"github.com/tomiya7688/Open-llm-learner/internal/resource"
 )
 
 type Config struct {
 	Project  *project.Loaded
 	Resolver modpkg.Resolver
 	Stderr   io.Writer
+	Governor *resource.Governor
 }
 
 type Registry struct {
-	project *project.Loaded
-	stderr  io.Writer
+	project  *project.Loaded
+	stderr   io.Writer
+	governor *resource.Governor
 
 	mu      sync.Mutex
 	entries map[string]*entry
+	counter atomic.Uint64
 }
 
 type entry struct {
@@ -51,6 +56,7 @@ func New(cfg Config) (*Registry, error) {
 	r := &Registry{
 		project: cfg.Project,
 		stderr: cfg.Stderr,
+		governor: cfg.Governor,
 		entries: make(map[string]*entry, len(cfg.Project.Project.Mods)),
 	}
 	for _, selection := range cfg.Project.Project.Mods {
@@ -113,14 +119,30 @@ func (r *Registry) invokeTarget(ctx context.Context, modID, action string, input
 	if _, ok := target.resolved.Package.Manifest.Provides[action]; !ok {
 		return nil, &modproc.RemoteError{Code:"ACTION_NOT_FOUND", Message:fmt.Sprintf("MOD %s does not provide action %q", modID, action)}
 	}
+	client, err := r.clientFor(ctx, modID, target)
+	if err != nil {
+		return nil, err
+	}
+
+	estimate, err := r.estimateForAction(ctx, target, client, action, input)
+	if err != nil {
+		return nil, err
+	}
+	var lease *resource.Lease
+	if r.governor != nil && estimate != nil {
+		lease, err = r.governor.Admit(ctx, resource.Request{
+			ID: fmt.Sprintf("%s/%s/%d", modID, action, r.counter.Add(1)),
+			Estimate: *estimate,
+		})
+		if err != nil {
+			return nil, err
+		}
+		defer lease.Release()
+	}
 
 	if target.resolved.Package.Manifest.Concurrency == "serial" {
 		target.serialMu.Lock()
 		defer target.serialMu.Unlock()
-	}
-	client, err := r.clientFor(ctx, modID, target)
-	if err != nil {
-		return nil, err
 	}
 	raw, err := client.Invoke(ctx, action, input, func(event protocol.Event) {
 		if onEvent == nil {
@@ -145,6 +167,82 @@ func (r *Registry) invokeTarget(ctx context.Context, modID, action string, input
 		return nil, &modproc.RemoteError{Code:"PROTOCOL_ERROR", Message:fmt.Sprintf("MOD %s returned invalid JSON result: %v", modID, err)}
 	}
 	return output, nil
+}
+
+func (r *Registry) estimateForAction(ctx context.Context, target *entry, client *modproc.Client, action string, input any) (*resource.Estimate, error) {
+	if r.governor == nil {
+		return nil, nil
+	}
+	estimateAction := ""
+	for name, provided := range target.resolved.Package.Manifest.Provides {
+		if provided.Capability == "resource.estimate" {
+			estimateAction = name
+			break
+		}
+	}
+	if estimateAction == "" || action == estimateAction {
+		return nil, nil
+	}
+
+	invoke := func() (json.RawMessage, error) {
+		return client.Invoke(ctx, estimateAction, map[string]any{"action":action, "input":input}, nil)
+	}
+	var raw json.RawMessage
+	var err error
+	if target.resolved.Package.Manifest.Concurrency == "serial" {
+		target.serialMu.Lock()
+		raw, err = invoke()
+		target.serialMu.Unlock()
+	} else {
+		raw, err = invoke()
+	}
+	if err != nil {
+		return nil, fmt.Errorf("resource estimate for %s.%s failed: %w", target.resolved.Package.Manifest.ID, action, err)
+	}
+	var object map[string]any
+	if err := json.Unmarshal(raw, &object); err != nil {
+		return nil, &modproc.RemoteError{Code:"PROTOCOL_ERROR", Message:"resource.estimate returned invalid JSON"}
+	}
+	estimate, err := parseResourceEstimate(object)
+	if err != nil {
+		return nil, &modproc.RemoteError{Code:"PROTOCOL_ERROR", Message:err.Error()}
+	}
+	return &estimate, nil
+}
+
+func parseResourceEstimate(object map[string]any) (resource.Estimate, error) {
+	var estimate resource.Estimate
+	var err error
+	if estimate.RAMBytes, err = uintField(object, "estimated_peak_ram_bytes", "ram_bytes"); err != nil {
+		return estimate, err
+	}
+	if estimate.VRAMBytes, err = uintField(object, "estimated_peak_vram_bytes", "vram_bytes"); err != nil {
+		return estimate, err
+	}
+	if estimate.DiskCacheBytes, err = uintField(object, "estimated_peak_disk_cache_bytes", "disk_cache_bytes"); err != nil {
+		return estimate, err
+	}
+	if heavy, ok := object["heavy"].(bool); ok {
+		estimate.Heavy = heavy
+	} else {
+		estimate.Heavy = estimate.RAMBytes > 0 || estimate.VRAMBytes > 0 || estimate.DiskCacheBytes > 0
+	}
+	return estimate, nil
+}
+
+func uintField(object map[string]any, names ...string) (uint64, error) {
+	for _, name := range names {
+		value, ok := object[name]
+		if !ok || value == nil {
+			continue
+		}
+		number, ok := value.(float64)
+		if !ok || number < 0 || number != float64(uint64(number)) {
+			return 0, fmt.Errorf("resource estimate field %q must be a non-negative integer", name)
+		}
+		return uint64(number), nil
+	}
+	return 0, nil
 }
 
 func (r *Registry) clientFor(ctx context.Context, modID string, target *entry) (*modproc.Client, error) {
