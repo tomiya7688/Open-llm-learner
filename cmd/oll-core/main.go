@@ -174,9 +174,15 @@ func flowCommand(args []string) error {
 
 	engine := &flow.Engine{
 		Invoker: registry,
+		LoadFlow: func(ctx context.Context, ref string) (*flow.Document, error) {
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
+			return loaded.LoadFlow(ref)
+		},
 		OnEvent: func(event flow.NodeEvent) {
 			payload, _ := json.Marshal(event.Event.Data)
-			fmt.Fprintf(os.Stderr, "node %s event %s: %s\n", event.NodeID, event.Event.Name, payload)
+			fmt.Fprintf(os.Stderr, "run %s node %s event %s: %s\n", event.RunID, event.NodeID, event.Event.Name, payload)
 		},
 	}
 	result, err := engine.Run(runCtx, doc, input)
