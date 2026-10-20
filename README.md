@@ -177,3 +177,11 @@ See [docs/architecture.md](docs/architecture.md), [docs/flow-v1-draft.md](docs/f
 Open LLM Learner project-owned source code is licensed under the [Apache License 2.0](LICENSE).
 
 Third-party models, datasets, MODs, APIs, and derived artifacts remain subject to their own licenses and terms. Open LLM Learner does not grant or guarantee rights to third-party content. See [docs/licensing.md](docs/licensing.md).
+
+
+## 利用者向けドキュメント
+
+- [用語集](docs/user-glossary-ja.md)
+- [GUI / Shell 機能ガイド](docs/user-ui-cli-guide-ja.md)
+
+未実装機能は Planned、試験的機能は Experimental と明示し、実装済みに見えないようにします。
