@@ -1,0 +1,26 @@
+{
+  "format": "open-llm-learner.mod",
+  "format_version": 1,
+  "id": "official.json",
+  "name": "Official JSON Reference MOD",
+  "version": "0.1.0",
+  "protocol": "1.0",
+  "entry": {
+    "command": "oll-mod-json"
+  },
+  "concurrency": "parallel",
+  "provides": {
+    "identity": {
+      "capability": "reference.json.identity"
+    },
+    "pick": {
+      "capability": "reference.json.pick"
+    },
+    "merge": {
+      "capability": "reference.json.merge"
+    },
+    "delegate": {
+      "capability": "reference.json.delegate"
+    }
+  }
+}
