@@ -160,3 +160,48 @@ The first exact compatible match is used.
 Project-local packages intentionally have highest priority so a project can carry a pinned/private MOD without changing the global installation.
 
 A project may record a package digest. If a digest is present, the resolved package must match it or the Core must report a reproducibility/integrity error rather than silently substituting another package.
+
+
+## Deterministic v0.1 package resolution
+
+The initial resolver stores installed packages as:
+
+```text
+<mods-root>/
+└─ <mod-id>/
+   └─ <version>/
+      └─ mod.json
+```
+
+MOD ids used by this resolver are restricted to lowercase ASCII letters, digits, `.`, `_`, and `-`, with the first character required to be alphanumeric.
+
+Package directory versions and manifest versions use SemVer 2.0.0 without a leading `v`.
+
+A project/dependency version selector may be:
+
+- an exact SemVer;
+- `*`;
+- a whitespace-separated AND expression using `=`, `>`, `>=`, `<`, or `<=`.
+
+Within one search root, the highest compatible version is selected. Search-root priority remains project-local, then user-managed, then official-bundled. If a higher-priority root contains the selected compatible package but that package is malformed or fails integrity validation, resolution fails rather than silently substituting a lower-priority package.
+
+### Package digest
+
+When a project records a package digest, v0.1 calculates it over every regular file in the package directory.
+
+Files are processed by UTF-8 relative path in bytewise sorted order. For each file the SHA-256 stream receives:
+
+1. relative-path byte length as unsigned 64-bit big-endian;
+2. UTF-8 relative-path bytes using `/` separators;
+3. file-content byte length as unsigned 64-bit big-endian;
+4. exact file bytes.
+
+The stored form is `sha256:<lowercase hex>`.
+
+Symbolic links and non-regular files are rejected for digestable MOD packages. This avoids integrity results that depend on external filesystem targets.
+
+### Direct dependencies
+
+The selected package's direct `dependencies` are resolved using the same search-root and version rules.
+
+v0.1 does not recursively resolve dependencies-of-dependencies yet. Missing or malformed direct dependencies fail package resolution.

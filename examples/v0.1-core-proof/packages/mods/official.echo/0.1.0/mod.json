@@ -1,0 +1,20 @@
+{
+  "format": "open-llm-learner.mod",
+  "format_version": 1,
+  "id": "official.echo",
+  "name": "Official Echo Reference MOD",
+  "version": "0.1.0",
+  "protocol": "1.0",
+  "entry": {
+    "command": "oll-mod-echo"
+  },
+  "concurrency": "parallel",
+  "provides": {
+    "echo": {
+      "capability": "reference.echo"
+    },
+    "sleep": {
+      "capability": "reference.sleep"
+    }
+  }
+}

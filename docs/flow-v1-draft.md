@@ -335,3 +335,131 @@ Input -> LLM MOD -> Action -> Tool MOD -> Result -> Loop
 ```
 
 are both ordinary Flows from the Core's point of view.
+
+
+## 17. v0.1 executable routing conventions
+
+The v0.1 Core uses ordinary Edge ports for branch and loop routing rather than adding branch-specific edge objects.
+
+### Incoming edge groups
+
+Edges targeting the **same input port** are alternatives (OR).
+
+Edges targeting **different input ports** are all required (AND).
+
+For example, either branch may satisfy the same downstream control input:
+
+```text
+branch.true  ----\
+                  -> join._control
+branch.false ----/
+```
+
+`_control` is a reserved Core-only input name. It participates in dependency/routing decisions but is removed before a MOD action receives its input JSON.
+
+### Branch ports
+
+A `branch` node evaluates its `condition` and emits exactly one routing port:
+
+- `true` when the condition matches;
+- `false` otherwise.
+
+It also exposes `matched` as the boolean condition result for ordinary data use.
+
+An edge sourced from the non-selected routing port does not produce a token, so that path remains inactive unless another alternative edge satisfies the same downstream input port.
+
+### Loop ports and finite cycles
+
+A `loop` node evaluates `until` each time it is activated.
+
+- if `until` is true, it emits `done`;
+- otherwise, if the budget remains, it emits `continue`;
+- if `until` is still false after `max_iterations` body iterations, the Flow fails with a loop-limit error.
+
+A loop body is represented as an ordinary graph cycle. The body returns to the same loop input port used by the initial entry edge:
+
+```text
+start.go -> loop.tick
+             |
+             +-- continue -> body ... -> loop.tick
+             |
+             +-- done ----> next
+```
+
+Any cyclic strongly-connected component in a v0.1 Flow must contain at least one bounded `loop` node. A cycle with no `loop(max_iterations)` is rejected during validation.
+
+### Condition references
+
+The v0.1 evaluator supports the operators already defined in this draft plus `and`, `or`, and `not` composition.
+
+Runtime values may be referenced with:
+
+- `$state.name` — run-scoped state;
+- `$input.name` — the current node input;
+- `$flow.name` — Flow input;
+- `$node.node_id.port` — a previously produced node output.
+
+These references are Core control syntax; domain-specific expressions remain outside the Flow language.
+
+
+## 18. v0.1 error routing
+
+A failed Node exposes a reserved `error` output port containing a structured JSON object:
+
+```json
+{
+  "code": "TIMEOUT",
+  "message": "context deadline exceeded",
+  "details": {}
+}
+```
+
+A Flow handles a Node failure by connecting that port to another Node:
+
+```json
+{
+  "from": "work.error",
+  "to": "recover.error"
+}
+```
+
+If at least one outgoing `error` edge exists, the failure is considered routed and the Flow may continue. The failed Node itself does **not** become succeeded; its lifecycle remains `failed`, `cancelled`, or `timed_out`.
+
+Normal result ports are not emitted for a failed invocation.
+
+If no outgoing `error` edge exists, the failure is unhandled and fails the containing Flow.
+
+An `after` dependency is satisfied only by a successfully completed Node. Recovery from failure therefore uses an explicit `error` edge instead of `after`.
+
+The Core records the same structured error in the Run result so callers can inspect handled failures after completion.
+
+## 19. v0.1 subflow execution
+
+A `flow.call` Node loads another Project-relative `*.flow.json` and starts a child Run.
+
+The child receives the `flow.call` Node's resolved inputs, excluding the reserved `_control` input.
+
+For a child Flow with one successful `end` Node, that End's output object becomes the normal output object of the parent `flow.call` Node.
+
+If multiple End Nodes succeed, the parent output is:
+
+```json
+{
+  "ends": {
+    "end_a": {},
+    "end_b": {}
+  }
+}
+```
+
+If the child fails with an unhandled error, the `flow.call` Node fails. The parent may recover with the ordinary `flow.call-node.error` route.
+
+Cancellation and timeout contexts propagate from the parent `flow.call` invocation into the child Run and its active MOD invocations.
+
+Run results retain:
+
+- a Run ID;
+- the parent Run ID for child Runs;
+- child Run results grouped under the calling Node.
+
+This relationship is execution metadata only. It does not create a private API between official and third-party Flows.

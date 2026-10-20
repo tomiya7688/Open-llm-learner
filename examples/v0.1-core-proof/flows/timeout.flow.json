@@ -1,0 +1,32 @@
+{
+  "format": "open-llm-learner.flow",
+  "format_version": 1,
+  "id": "timeout",
+  "name": "Timeout handled by an error route",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "start"
+    },
+    {
+      "id": "slow",
+      "type": "mod",
+      "capability": "reference.sleep",
+      "after": ["start"],
+      "timeout_ms": 25,
+      "inputs": {
+        "ms": 250
+      }
+    },
+    {
+      "id": "recovered",
+      "type": "end"
+    }
+  ],
+  "edges": [
+    {
+      "from": "slow.error",
+      "to": "recovered.error"
+    }
+  ]
+}
