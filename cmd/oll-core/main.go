@@ -8,8 +8,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/tomiya7688/Open-llm-learner/internal/flow"
 	"github.com/tomiya7688/Open-llm-learner/internal/modpkg"
 	"github.com/tomiya7688/Open-llm-learner/internal/modproc"
+	"github.com/tomiya7688/Open-llm-learner/internal/modruntime"
 	"github.com/tomiya7688/Open-llm-learner/internal/project"
 	"github.com/tomiya7688/Open-llm-learner/internal/protocol"
 )
@@ -23,6 +25,8 @@ func main() {
 	switch os.Args[1] {
 	case "project":
 		err = projectCommand(os.Args[2:])
+	case "flow":
+		err = flowCommand(os.Args[2:])
 	case "mod":
 		err = modCommand(os.Args[2:])
 	default:
@@ -37,24 +41,141 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, "Open LLM Learner Core proof CLI")
+	fmt.Fprintln(os.Stderr, "  oll-core project create --name <name> <project-dir>")
 	fmt.Fprintln(os.Stderr, "  oll-core project validate <project-dir>")
+	fmt.Fprintln(os.Stderr, "  oll-core project permission <grant|revoke> <project-dir> <mod-id> <permission>")
+	fmt.Fprintln(os.Stderr, "  oll-core flow run --project <dir> [--entry default] [--input <json>] [--user-mods <dir>] [--official-mods <dir>]")
 	fmt.Fprintln(os.Stderr, "  oll-core mod inspect <mod-package-dir>")
 	fmt.Fprintln(os.Stderr, "  oll-core mod invoke --package <dir> --action <name> [--input <json>] [--timeout 30s]")
 }
 
 func projectCommand(args []string) error {
-	if len(args) != 2 || args[0] != "validate" {
-		return fmt.Errorf("usage: oll-core project validate <project-dir>")
+	if len(args) == 0 {
+		return fmt.Errorf("missing project subcommand")
 	}
-	loaded, err := project.Load(args[1])
+	switch args[0] {
+	case "create":
+		fs := flag.NewFlagSet("project create", flag.ContinueOnError)
+		name := fs.String("name", "", "project display name")
+		if err := fs.Parse(args[1:]); err != nil {
+			return err
+		}
+		if *name == "" || fs.NArg() != 1 {
+			return fmt.Errorf("usage: oll-core project create --name <name> <project-dir>")
+		}
+		loaded, err := project.Create(fs.Arg(0), *name)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("created project %s at %s\n", loaded.Project.ID, loaded.Root)
+		return nil
+	case "validate":
+		if len(args) != 2 {
+			return fmt.Errorf("usage: oll-core project validate <project-dir>")
+		}
+		loaded, err := project.Load(args[1])
+		if err != nil {
+			return err
+		}
+		if err := loaded.ValidateEntrypoints(); err != nil {
+			return err
+		}
+		fmt.Printf("project %s is valid (%d entrypoints)\n", loaded.Project.ID, len(loaded.Project.Entrypoints))
+		return nil
+	case "permission":
+		if len(args) != 5 || (args[1] != "grant" && args[1] != "revoke") {
+			return fmt.Errorf("usage: oll-core project permission <grant|revoke> <project-dir> <mod-id> <permission>")
+		}
+		loaded, err := project.Load(args[2])
+		if err != nil {
+			return err
+		}
+		allowed := args[1] == "grant"
+		changed, err := loaded.SetPermission(args[3], args[4], allowed)
+		if err != nil {
+			return err
+		}
+		if changed {
+			if err := loaded.Save(); err != nil {
+				return err
+			}
+		}
+		state := "revoked"
+		if allowed {
+			state = "granted"
+		}
+		fmt.Printf("%s %s for %s (changed=%v)\n", state, args[4], args[3], changed)
+		return nil
+	default:
+		return fmt.Errorf("unknown project subcommand %q", args[0])
+	}
+}
+
+func flowCommand(args []string) error {
+	if len(args) == 0 || args[0] != "run" {
+		return fmt.Errorf("usage: oll-core flow run --project <dir> [options]")
+	}
+	fs := flag.NewFlagSet("flow run", flag.ContinueOnError)
+	projectDir := fs.String("project", "", "project directory")
+	entry := fs.String("entry", "default", "project entrypoint name")
+	inputText := fs.String("input", "{}", "flow input JSON object")
+	userMods := fs.String("user-mods", "", "user-managed MOD root")
+	officialMods := fs.String("official-mods", "", "official bundled MOD root")
+	timeout := fs.Duration("timeout", 0, "optional whole-flow timeout")
+	if err := fs.Parse(args[1:]); err != nil {
+		return err
+	}
+	if *projectDir == "" {
+		return fmt.Errorf("--project is required")
+	}
+	loaded, err := project.Load(*projectDir)
 	if err != nil {
 		return err
 	}
-	if err := loaded.ValidateEntrypoints(); err != nil {
+	flowPath, ok := loaded.Project.Entrypoints[*entry]
+	if !ok {
+		return fmt.Errorf("project entrypoint %q not found", *entry)
+	}
+	doc, err := loaded.LoadFlow(flowPath)
+	if err != nil {
 		return err
 	}
-	fmt.Printf("project %s is valid (%d entrypoints)\n", loaded.Project.ID, len(loaded.Project.Entrypoints))
-	return nil
+	var input map[string]any
+	if err := json.Unmarshal([]byte(*inputText), &input); err != nil {
+		return fmt.Errorf("invalid --input JSON object: %w", err)
+	}
+	resolver := modpkg.Resolver{Roots:modpkg.DefaultRoots(loaded.Root, *userMods, *officialMods)}
+	registry, err := modruntime.New(modruntime.Config{Project:loaded, Resolver:resolver, Stderr:os.Stderr})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := modruntime.ShutdownWithDefaultTimeout(registry); err != nil {
+			fmt.Fprintln(os.Stderr, "shutdown warning:", err)
+		}
+	}()
+
+	runCtx := context.Background()
+	cancel := func() {}
+	if *timeout > 0 {
+		runCtx, cancel = context.WithTimeout(runCtx, *timeout)
+	}
+	defer cancel()
+
+	engine := &flow.Engine{
+		Invoker: registry,
+		OnEvent: func(event flow.NodeEvent) {
+			payload, _ := json.Marshal(event.Event.Data)
+			fmt.Fprintf(os.Stderr, "node %s event %s: %s\n", event.NodeID, event.Event.Name, payload)
+		},
+	}
+	result, err := engine.Run(runCtx, doc, input)
+	if err != nil {
+		return err
+	}
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	return enc.Encode(result)
 }
 
 func modCommand(args []string) error {
