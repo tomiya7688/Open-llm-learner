@@ -1,0 +1,41 @@
+{
+  "format": "open-llm-learner.flow",
+  "format_version": 1,
+  "id": "wrap",
+  "name": "Reusable echo subflow",
+  "inputs": {
+    "message": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "outputs": {
+    "message": {
+      "type": "string"
+    }
+  },
+  "nodes": [
+    {
+      "id": "start",
+      "type": "start"
+    },
+    {
+      "id": "echo",
+      "type": "mod",
+      "capability": "reference.echo",
+      "after": ["start"],
+      "inputs": {
+        "message": "$flow.message"
+      }
+    },
+    {
+      "id": "end",
+      "type": "end",
+      "after": ["echo"],
+      "inputs": {
+        "message": "$node.echo.message"
+      }
+    }
+  ],
+  "edges": []
+}
