@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -276,6 +277,40 @@ func (l *Loaded) ValidateEntrypoints() error {
 		}
 	}
 	return nil
+}
+
+func (l *Loaded) SetPermission(modID, permission string, allowed bool) (bool, error) {
+	if strings.TrimSpace(modID) == "" || strings.TrimSpace(permission) == "" {
+		return false, errors.New("mod id and permission are required")
+	}
+	for i := range l.Project.Mods {
+		if l.Project.Mods[i].ID != modID {
+			continue
+		}
+		grants := l.Project.Mods[i].Permissions
+		index := -1
+		for j, grant := range grants {
+			if grant == permission {
+				index = j
+				break
+			}
+		}
+		if allowed {
+			if index >= 0 {
+				return false, nil
+			}
+			grants = append(grants, permission)
+			sort.Strings(grants)
+			l.Project.Mods[i].Permissions = grants
+			return true, nil
+		}
+		if index < 0 {
+			return false, nil
+		}
+		l.Project.Mods[i].Permissions = append(grants[:index], grants[index+1:]...)
+		return true, nil
+	}
+	return false, fmt.Errorf("project does not select MOD %q", modID)
 }
 
 func (l *Loaded) ResolvePath(rel string) (string, error) {
