@@ -68,11 +68,11 @@ func (m *Manifest) Validate() error {
 	if m.FormatVersion != ManifestFormatVersion {
 		return fmt.Errorf("unsupported MOD manifest format_version %d", m.FormatVersion)
 	}
-	if strings.TrimSpace(m.ID) == "" {
-		return errors.New("MOD manifest id is required")
+	if !modIDPattern.MatchString(m.ID) {
+		return fmt.Errorf("invalid MOD id %q", m.ID)
 	}
-	if strings.TrimSpace(m.Version) == "" {
-		return errors.New("MOD manifest version is required")
+	if _, err := ParseVersion(m.Version); err != nil {
+		return fmt.Errorf("invalid MOD version: %w", err)
 	}
 	if strings.TrimSpace(m.Protocol) == "" {
 		return errors.New("MOD manifest protocol is required")
@@ -83,11 +83,39 @@ func (m *Manifest) Validate() error {
 	if len(m.Provides) == 0 {
 		return errors.New("MOD manifest provides must contain at least one action")
 	}
+	for action := range m.Provides {
+		if strings.TrimSpace(action) == "" {
+			return errors.New("MOD action name cannot be empty")
+		}
+	}
 	if m.Concurrency == "" {
 		m.Concurrency = "serial"
 	}
 	if m.Concurrency != "serial" && m.Concurrency != "parallel" {
 		return fmt.Errorf("invalid MOD concurrency %q", m.Concurrency)
+	}
+	seenPermissions := map[string]struct{}{}
+	for _, permission := range m.Permissions {
+		if strings.TrimSpace(permission) == "" {
+			return errors.New("MOD permission cannot be empty")
+		}
+		if _, ok := seenPermissions[permission]; ok {
+			return fmt.Errorf("duplicate MOD permission %q", permission)
+		}
+		seenPermissions[permission] = struct{}{}
+	}
+	seenDeps := map[string]struct{}{}
+	for _, dep := range m.Dependencies {
+		if !modIDPattern.MatchString(dep.ID) {
+			return fmt.Errorf("invalid dependency MOD id %q", dep.ID)
+		}
+		if _, ok := seenDeps[dep.ID]; ok {
+			return fmt.Errorf("duplicate MOD dependency %q", dep.ID)
+		}
+		seenDeps[dep.ID] = struct{}{}
+		if _, err := MatchVersion("0.0.0", dep.Version); err != nil {
+			return fmt.Errorf("invalid dependency version constraint for %s: %w", dep.ID, err)
+		}
 	}
 	return nil
 }
