@@ -235,3 +235,206 @@ func indexText(value, want string) int {
 }
 
 var _ sync.Locker
+
+
+type testCodedError struct {
+	code string
+	msg  string
+}
+
+func (e testCodedError) Error() string { return e.msg }
+func (e testCodedError) ErrorCode() string { return e.code }
+
+func TestHandledErrorRouteContinuesFlow(t *testing.T) {
+	invoker := &fakeInvoker{fn: func(context.Context, InvocationRequest) (any, error) {
+		return nil, testCodedError{code:"EXPECTED_FAILURE", msg:"boom"}
+	}}
+	doc := baseDocument([]Node{
+		{ID:"start", Type:"start"},
+		{ID:"fail", Type:"mod", Mod:"test", Action:"fail"},
+		{ID:"recover", Type:"set", Key:"handled"},
+		{ID:"end", Type:"end"},
+	}, []Edge{
+		{From:"start.go", To:"fail._control"},
+		{From:"fail.error", To:"recover.value"},
+		{From:"recover.value", To:"end.value"},
+	})
+	result, err := (&Engine{Invoker:invoker}).Run(context.Background(), doc, map[string]any{"go":true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.NodeStatus["fail"] != StatusFailed {
+		t.Fatalf("expected failed node status, got %s", result.NodeStatus["fail"])
+	}
+	errorObject, ok := result.State["handled"].(map[string]any)
+	if !ok || errorObject["code"] != "EXPECTED_FAILURE" {
+		t.Fatalf("unexpected handled error: %#v", result.State["handled"])
+	}
+	if result.EndOutputs["end"]["value"].(map[string]any)["code"] != "EXPECTED_FAILURE" {
+		t.Fatalf("recovery output did not reach end: %#v", result.EndOutputs)
+	}
+}
+
+func TestUnhandledErrorFailsFlow(t *testing.T) {
+	invoker := &fakeInvoker{fn: func(context.Context, InvocationRequest) (any, error) {
+		return nil, errors.New("boom")
+	}}
+	doc := baseDocument([]Node{
+		{ID:"start", Type:"start"},
+		{ID:"fail", Type:"mod", Mod:"test", Action:"fail"},
+	}, []Edge{
+		{From:"start.go", To:"fail._control"},
+	})
+	result, err := (&Engine{Invoker:invoker}).Run(context.Background(), doc, map[string]any{"go":true})
+	if err == nil || !containsText(err.Error(), "boom") {
+		t.Fatalf("expected unhandled error, got %v", err)
+	}
+	if result.NodeStatus["fail"] != StatusFailed {
+		t.Fatalf("unexpected status: %#v", result.NodeStatus)
+	}
+}
+
+func TestTimeoutCanBeRoutedAndIsRecorded(t *testing.T) {
+	invoker := &fakeInvoker{fn: func(ctx context.Context, req InvocationRequest) (any, error) {
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}}
+	doc := baseDocument([]Node{
+		{ID:"start", Type:"start"},
+		{ID:"slow", Type:"mod", Mod:"test", Action:"slow", TimeoutMS:20},
+		{ID:"end", Type:"end"},
+	}, []Edge{
+		{From:"start.go", To:"slow._control"},
+		{From:"slow.error", To:"end.error"},
+	})
+	result, err := (&Engine{Invoker:invoker}).Run(context.Background(), doc, map[string]any{"go":true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.NodeStatus["slow"] != StatusTimedOut {
+		t.Fatalf("expected timed_out, got %s", result.NodeStatus["slow"])
+	}
+	if result.NodeErrors["slow"].Code != "TIMEOUT" {
+		t.Fatalf("unexpected error record: %+v", result.NodeErrors["slow"])
+	}
+	if result.EndOutputs["end"]["error"].(map[string]any)["code"] != "TIMEOUT" {
+		t.Fatalf("timeout route did not reach end: %#v", result.EndOutputs)
+	}
+}
+
+func TestFlowCallMapsInputOutputAndTracksChildRun(t *testing.T) {
+	child := baseDocument([]Node{
+		{ID:"start", Type:"start"},
+		{ID:"end", Type:"end"},
+	}, []Edge{
+		{From:"start.value", To:"end.value"},
+	})
+	child.ID = "child"
+	parent := baseDocument([]Node{
+		{ID:"start", Type:"start"},
+		{ID:"child", Type:"flow.call", Flow:"flows/child.flow.json"},
+		{ID:"end", Type:"end"},
+	}, []Edge{
+		{From:"start.value", To:"child.value"},
+		{From:"child.value", To:"end.value"},
+	})
+	engine := &Engine{
+		LoadFlow: func(ctx context.Context, ref string) (*Document, error) {
+			if ref != "flows/child.flow.json" {
+				t.Fatalf("unexpected flow ref %q", ref)
+			}
+			return child, nil
+		},
+	}
+	result, err := engine.Run(context.Background(), parent, map[string]any{"value":"hello"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.EndOutputs["end"]["value"] != "hello" {
+		t.Fatalf("unexpected parent output: %#v", result.EndOutputs)
+	}
+	childRuns := result.Children["child"]
+	if len(childRuns) != 1 {
+		t.Fatalf("expected one child run, got %#v", result.Children)
+	}
+	if childRuns[0].ParentRunID != result.RunID {
+		t.Fatalf("parent/child linkage missing: parent=%s child.parent=%s", result.RunID, childRuns[0].ParentRunID)
+	}
+	if childRuns[0].EndOutputs["end"]["value"] != "hello" {
+		t.Fatalf("unexpected child output: %#v", childRuns[0].EndOutputs)
+	}
+}
+
+func TestSubflowFailureCanBeHandledByParent(t *testing.T) {
+	invoker := &fakeInvoker{fn: func(context.Context, InvocationRequest) (any, error) {
+		return nil, testCodedError{code:"CHILD_FAILURE", msg:"child failed"}
+	}}
+	child := baseDocument([]Node{
+		{ID:"start", Type:"start"},
+		{ID:"fail", Type:"mod", Mod:"test", Action:"fail"},
+	}, []Edge{
+		{From:"start.go", To:"fail._control"},
+	})
+	child.ID = "child-failure"
+	parent := baseDocument([]Node{
+		{ID:"start", Type:"start"},
+		{ID:"child", Type:"flow.call", Flow:"flows/failing.flow.json"},
+		{ID:"end", Type:"end"},
+	}, []Edge{
+		{From:"start.go", To:"child._control"},
+		{From:"child.error", To:"end.error"},
+	})
+	engine := &Engine{
+		Invoker:invoker,
+		LoadFlow:func(context.Context, string) (*Document, error) { return child, nil },
+	}
+	result, err := engine.Run(context.Background(), parent, map[string]any{"go":true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.NodeStatus["child"] != StatusFailed {
+		t.Fatalf("expected parent flow.call to be failed-but-handled, got %s", result.NodeStatus["child"])
+	}
+	if len(result.Children["child"]) != 1 {
+		t.Fatalf("child run not retained: %#v", result.Children)
+	}
+	if result.Children["child"][0].NodeErrors["fail"].Code != "CHILD_FAILURE" {
+		t.Fatalf("child error not preserved: %#v", result.Children["child"][0].NodeErrors)
+	}
+}
+
+func TestRootCancellationPropagatesToActiveInvocation(t *testing.T) {
+	started := make(chan struct{})
+	invoker := &fakeInvoker{fn: func(ctx context.Context, req InvocationRequest) (any, error) {
+		close(started)
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}}
+	doc := baseDocument([]Node{
+		{ID:"start", Type:"start"},
+		{ID:"work", Type:"mod", Mod:"test", Action:"block"},
+	}, []Edge{
+		{From:"start.go", To:"work._control"},
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct {
+		result *Result
+		err error
+	}, 1)
+	go func() {
+		result, err := (&Engine{Invoker:invoker}).Run(ctx, doc, map[string]any{"go":true})
+		done <- struct {
+			result *Result
+			err error
+		}{result:result, err:err}
+	}()
+	<-started
+	cancel()
+	out := <-done
+	if !errors.Is(out.err, context.Canceled) {
+		t.Fatalf("expected context cancellation, got %v", out.err)
+	}
+	if out.result.NodeStatus["work"] != StatusCancelled {
+		t.Fatalf("expected active node cancelled, got %s", out.result.NodeStatus["work"])
+	}
+}
