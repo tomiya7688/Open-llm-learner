@@ -14,6 +14,7 @@ import (
 	"github.com/tomiya7688/Open-llm-learner/internal/modruntime"
 	"github.com/tomiya7688/Open-llm-learner/internal/project"
 	"github.com/tomiya7688/Open-llm-learner/internal/protocol"
+	"github.com/tomiya7688/Open-llm-learner/internal/resource"
 )
 
 func main() {
@@ -121,6 +122,7 @@ func flowCommand(args []string) error {
 	inputText := fs.String("input", "{}", "flow input JSON object")
 	userMods := fs.String("user-mods", "", "user-managed MOD root")
 	officialMods := fs.String("official-mods", "", "official bundled MOD root")
+	allowUnknownVRAM := fs.Bool("allow-unknown-vram", false, "allow VRAM-estimated work when host VRAM cannot be measured")
 	timeout := fs.Duration("timeout", 0, "optional whole-flow timeout")
 	if err := fs.Parse(args[1:]); err != nil {
 		return err
@@ -145,7 +147,15 @@ func flowCommand(args []string) error {
 		return fmt.Errorf("invalid --input JSON object: %w", err)
 	}
 	resolver := modpkg.Resolver{Roots:modpkg.DefaultRoots(loaded.Root, *userMods, *officialMods)}
-	registry, err := modruntime.New(modruntime.Config{Project:loaded, Resolver:resolver, Stderr:os.Stderr})
+	governor, err := resource.NewGovernor(resource.GovernorConfig{
+		Policy: resource.Policy{},
+		Sampler: resource.NewHostSampler(),
+		AllowUnknownVRAM: *allowUnknownVRAM,
+	})
+	if err != nil {
+		return err
+	}
+	registry, err := modruntime.New(modruntime.Config{Project:loaded, Resolver:resolver, Stderr:os.Stderr, Governor:governor})
 	if err != nil {
 		return err
 	}
