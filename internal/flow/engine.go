@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -35,24 +35,40 @@ const (
 	StatusRunning   NodeStatus = "running"
 	StatusSucceeded NodeStatus = "succeeded"
 	StatusFailed    NodeStatus = "failed"
+	StatusCancelled NodeStatus = "cancelled"
+	StatusTimedOut  NodeStatus = "timed_out"
 	StatusSkipped   NodeStatus = "skipped"
 )
 
+type ErrorValue struct {
+	Code    string         `json:"code"`
+	Message string         `json:"message"`
+	Details map[string]any `json:"details,omitempty"`
+}
+
 type NodeEvent struct {
-	NodeID string
-	Event  InvocationEvent
+	RunID       string
+	ParentRunID string
+	NodeID      string
+	Event       InvocationEvent
 }
 
 type Engine struct {
-	Invoker Invoker
-	OnEvent func(NodeEvent)
+	Invoker        Invoker
+	LoadFlow       func(context.Context, string) (*Document, error)
+	OnEvent        func(NodeEvent)
+	runCounter     atomic.Uint64
 }
 
 type Result struct {
+	RunID       string
+	ParentRunID string
 	State       map[string]any
 	NodeOutputs map[string]map[string]any
 	NodeStatus  map[string]NodeStatus
+	NodeErrors  map[string]ErrorValue
 	EndOutputs  map[string]map[string]any
+	Children    map[string][]*Result
 }
 
 type edgeRuntime struct {
@@ -72,12 +88,13 @@ type nodeRuntime struct {
 }
 
 type completion struct {
-	nodeID    string
-	output    map[string]any
-	setKey    string
-	setValue  any
-	hasSet    bool
-	err       error
+	nodeID      string
+	output      map[string]any
+	setKey      string
+	setValue    any
+	hasSet      bool
+	childResult *Result
+	err         error
 }
 
 type executionEnv struct {
@@ -87,10 +104,23 @@ type executionEnv struct {
 	outputs   map[string]map[string]any
 }
 
+type codedError interface {
+	ErrorCode() string
+}
+
+type detailedError interface {
+	ErrorDetails() map[string]any
+}
+
 func (e *Engine) Run(ctx context.Context, doc *Document, input map[string]any) (*Result, error) {
+	return e.run(ctx, doc, input, "")
+}
+
+func (e *Engine) run(ctx context.Context, doc *Document, input map[string]any, parentRunID string) (*Result, error) {
 	if err := doc.Validate(); err != nil {
 		return nil, err
 	}
+	runID := fmt.Sprintf("run-%d", e.runCounter.Add(1))
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -117,7 +147,9 @@ func (e *Engine) Run(ctx context.Context, doc *Document, input map[string]any) (
 
 	state := map[string]any{}
 	outputs := map[string]map[string]any{}
+	nodeErrors := map[string]ErrorValue{}
 	endOutputs := map[string]map[string]any{}
+	children := map[string][]*Result{}
 	completions := make(chan completion, maxInt(1, len(nodes)))
 	running := 0
 	var firstErr error
@@ -144,7 +176,7 @@ func (e *Engine) Run(ctx context.Context, doc *Document, input map[string]any) (
 				}
 				runCount := rt.runs
 				go func(node Node, env executionEnv, runCount int) {
-					completions <- e.executeNode(runCtx, node, env, runCount)
+					completions <- e.executeNode(runCtx, runID, node, env, runCount)
 				}(rt.node, env, runCount)
 			}
 		}
@@ -152,17 +184,17 @@ func (e *Engine) Run(ctx context.Context, doc *Document, input map[string]any) (
 		if running == 0 {
 			if firstErr != nil {
 				markPendingSkipped(nodes)
-				return resultFrom(state, outputs, nodes, endOutputs), firstErr
+				return resultFrom(runID, parentRunID, state, outputs, nodes, nodeErrors, endOutputs, children), firstErr
 			}
 			select {
 			case <-ctx.Done():
 				markPendingSkipped(nodes)
-				return resultFrom(state, outputs, nodes, endOutputs), ctx.Err()
+				return resultFrom(runID, parentRunID, state, outputs, nodes, nodeErrors, endOutputs, children), ctx.Err()
 			default:
 			}
 			if !started {
 				markPendingSkipped(nodes)
-				return resultFrom(state, outputs, nodes, endOutputs), nil
+				return resultFrom(runID, parentRunID, state, outputs, nodes, nodeErrors, endOutputs, children), nil
 			}
 		}
 
@@ -171,14 +203,32 @@ func (e *Engine) Run(ctx context.Context, doc *Document, input map[string]any) (
 			rt := nodes[c.nodeID]
 			rt.running = false
 			running--
+			if c.childResult != nil {
+				children[c.nodeID] = append(children[c.nodeID], c.childResult)
+			}
 			if c.err != nil {
-				rt.status = StatusFailed
-				if firstErr == nil {
+				rt.runs++
+				rt.status = statusForError(c.err)
+				errorValue := structuredError(c.err)
+				nodeErrors[c.nodeID] = errorValue
+				errorObject := errorValueMap(errorValue)
+				outputs[c.nodeID] = map[string]any{"error": errorObject}
+
+				handled := false
+				for _, edge := range outgoing[c.nodeID] {
+					if edge.fromPort != "error" {
+						continue
+					}
+					edge.queue = append(edge.queue, errorObject)
+					handled = true
+				}
+				if !handled && firstErr == nil {
 					firstErr = fmt.Errorf("node %s failed: %w", c.nodeID, c.err)
 					cancel()
 				}
 				continue
 			}
+
 			rt.runs++
 			rt.status = StatusSucceeded
 			outputs[c.nodeID] = cloneMap(c.output)
@@ -220,7 +270,7 @@ func isRunnable(rt *nodeRuntime, all map[string]*nodeRuntime, groups map[string]
 	}
 	for _, dep := range rt.node.After {
 		depRT := all[dep]
-		if depRT == nil || depRT.runs == 0 || depRT.status == StatusFailed {
+		if depRT == nil || depRT.runs == 0 || depRT.status != StatusSucceeded {
 			return false
 		}
 	}
@@ -245,7 +295,9 @@ func isRunnable(rt *nodeRuntime, all map[string]*nodeRuntime, groups map[string]
 func consumeInputs(groups map[string][]*edgeRuntime) map[string]any {
 	input := map[string]any{}
 	ports := make([]string, 0, len(groups))
-	for port := range groups { ports = append(ports, port) }
+	for port := range groups {
+		ports = append(ports, port)
+	}
 	sort.Strings(ports)
 	for _, port := range ports {
 		for _, edge := range groups[port] {
@@ -260,7 +312,7 @@ func consumeInputs(groups map[string][]*edgeRuntime) map[string]any {
 	return input
 }
 
-func (e *Engine) executeNode(ctx context.Context, node Node, env executionEnv, runCount int) completion {
+func (e *Engine) executeNode(ctx context.Context, runID string, node Node, env executionEnv, runCount int) completion {
 	c := completion{nodeID: node.ID}
 	nodeCtx := ctx
 	cancel := func() {}
@@ -355,10 +407,13 @@ func (e *Engine) executeNode(ctx context.Context, node Node, env executionEnv, r
 		for attempt := 0; attempt < attempts; attempt++ {
 			output, err = e.Invoker.Invoke(nodeCtx, request, func(event InvocationEvent) {
 				if e.OnEvent != nil {
-					e.OnEvent(NodeEvent{NodeID: node.ID, Event: event})
+					e.OnEvent(NodeEvent{RunID:runID, NodeID:node.ID, Event:event})
 				}
 			})
 			if err == nil {
+				break
+			}
+			if nodeCtx.Err() != nil {
 				break
 			}
 			if attempt+1 < attempts && delay > 0 {
@@ -378,7 +433,27 @@ func (e *Engine) executeNode(ctx context.Context, node Node, env executionEnv, r
 		}
 		c.output = normalizeOutput(output)
 	case "flow.call":
-		c.err = errors.New("flow.call execution is not implemented yet")
+		if e.LoadFlow == nil {
+			c.err = errors.New("no subflow loader configured")
+			return c
+		}
+		childDoc, err := e.LoadFlow(nodeCtx, node.Flow)
+		if err != nil {
+			c.err = fmt.Errorf("load subflow %q: %w", node.Flow, err)
+			return c
+		}
+		childResult, err := e.run(nodeCtx, childDoc, withoutControl(staticInput), runID)
+		c.childResult = childResult
+		if err != nil {
+			c.err = fmt.Errorf("subflow %q failed: %w", node.Flow, err)
+			return c
+		}
+		childOutput, err := subflowOutput(childResult)
+		if err != nil {
+			c.err = err
+			return c
+		}
+		c.output = childOutput
 	default:
 		c.err = fmt.Errorf("unsupported node type %q", node.Type)
 	}
@@ -386,6 +461,21 @@ func (e *Engine) executeNode(ctx context.Context, node Node, env executionEnv, r
 		c.output = map[string]any{}
 	}
 	return c
+}
+
+func subflowOutput(result *Result) (map[string]any, error) {
+	if result == nil {
+		return nil, errors.New("subflow returned no result")
+	}
+	if len(result.EndOutputs) == 0 {
+		return nil, errors.New("subflow completed without a successful end node")
+	}
+	if len(result.EndOutputs) == 1 {
+		for _, output := range result.EndOutputs {
+			return cloneMap(output), nil
+		}
+	}
+	return map[string]any{"ends": cloneNestedMap(result.EndOutputs)}, nil
 }
 
 func normalizeOutput(value any) map[string]any {
@@ -405,6 +495,54 @@ func withoutControl(input map[string]any) map[string]any {
 			continue
 		}
 		out[key] = value
+	}
+	return out
+}
+
+func statusForError(err error) NodeStatus {
+	if errors.Is(err, context.DeadlineExceeded) {
+		return StatusTimedOut
+	}
+	if errors.Is(err, context.Canceled) {
+		return StatusCancelled
+	}
+	var coded codedError
+	if errors.As(err, &coded) {
+		switch coded.ErrorCode() {
+		case "TIMEOUT":
+			return StatusTimedOut
+		case "CANCELLED":
+			return StatusCancelled
+		}
+	}
+	return StatusFailed
+}
+
+func structuredError(err error) ErrorValue {
+	value := ErrorValue{Code:"NODE_ERROR", Message:err.Error()}
+	if errors.Is(err, context.DeadlineExceeded) {
+		value.Code = "TIMEOUT"
+	} else if errors.Is(err, context.Canceled) {
+		value.Code = "CANCELLED"
+	}
+	var coded codedError
+	if errors.As(err, &coded) && coded.ErrorCode() != "" {
+		value.Code = coded.ErrorCode()
+	}
+	var detailed detailedError
+	if errors.As(err, &detailed) {
+		value.Details = cloneMap(detailed.ErrorDetails())
+	}
+	return value
+}
+
+func errorValueMap(value ErrorValue) map[string]any {
+	out := map[string]any{
+		"code": value.Code,
+		"message": value.Message,
+	}
+	if len(value.Details) > 0 {
+		out["details"] = cloneMap(value.Details)
 	}
 	return out
 }
@@ -490,10 +628,14 @@ func evalCondition(condition map[string]any, env executionEnv) (bool, error) {
 			return false, err
 		}
 		switch op {
-		case ">": return cmp > 0, nil
-		case ">=": return cmp >= 0, nil
-		case "<": return cmp < 0, nil
-		default: return cmp <= 0, nil
+		case ">":
+			return cmp > 0, nil
+		case ">=":
+			return cmp >= 0, nil
+		case "<":
+			return cmp < 0, nil
+		default:
+			return cmp <= 0, nil
 		}
 	default:
 		return false, fmt.Errorf("unsupported condition operator %q", op)
@@ -506,7 +648,9 @@ func resolveDeep(value any, env executionEnv) (any, bool, error) {
 		out := make(map[string]any, len(typed))
 		for key, child := range typed {
 			v, _, err := resolveDeep(child, env)
-			if err != nil { return nil, false, err }
+			if err != nil {
+				return nil, false, err
+			}
 			out[key] = v
 		}
 		return out, true, nil
@@ -514,7 +658,9 @@ func resolveDeep(value any, env executionEnv) (any, bool, error) {
 		out := make([]any, len(typed))
 		for i, child := range typed {
 			v, _, err := resolveDeep(child, env)
-			if err != nil { return nil, false, err }
+			if err != nil {
+				return nil, false, err
+			}
 			out[i] = v
 		}
 		return out, true, nil
@@ -601,20 +747,28 @@ func valuesEqual(a, b any) bool {
 func orderedCompare(a, b any) (int, error) {
 	if af, ok := asFloat64(a); ok {
 		bf, ok := asFloat64(b)
-		if !ok { return 0, fmt.Errorf("cannot compare numeric value with %T", b) }
+		if !ok {
+			return 0, fmt.Errorf("cannot compare numeric value with %T", b)
+		}
 		switch {
-		case af < bf: return -1, nil
-		case af > bf: return 1, nil
-		default: return 0, nil
+		case af < bf:
+			return -1, nil
+		case af > bf:
+			return 1, nil
+		default:
+			return 0, nil
 		}
 	}
 	as, aok := a.(string)
 	bs, bok := b.(string)
 	if aok && bok {
 		switch {
-		case as < bs: return -1, nil
-		case as > bs: return 1, nil
-		default: return 0, nil
+		case as < bs:
+			return -1, nil
+		case as > bs:
+			return 1, nil
+		default:
+			return 0, nil
 		}
 	}
 	return 0, fmt.Errorf("ordered comparison requires numbers or strings, got %T and %T", a, b)
@@ -622,24 +776,39 @@ func orderedCompare(a, b any) (int, error) {
 
 func asFloat64(value any) (float64, bool) {
 	switch v := value.(type) {
-	case int: return float64(v), true
-	case int8: return float64(v), true
-	case int16: return float64(v), true
-	case int32: return float64(v), true
-	case int64: return float64(v), true
-	case uint: return float64(v), true
-	case uint8: return float64(v), true
-	case uint16: return float64(v), true
-	case uint32: return float64(v), true
-	case uint64: return float64(v), true
-	case float32: return float64(v), true
-	case float64: return v, true
-	default: return 0, false
+	case int:
+		return float64(v), true
+	case int8:
+		return float64(v), true
+	case int16:
+		return float64(v), true
+	case int32:
+		return float64(v), true
+	case int64:
+		return float64(v), true
+	case uint:
+		return float64(v), true
+	case uint8:
+		return float64(v), true
+	case uint16:
+		return float64(v), true
+	case uint32:
+		return float64(v), true
+	case uint64:
+		return float64(v), true
+	case float32:
+		return float64(v), true
+	case float64:
+		return v, true
+	default:
+		return 0, false
 	}
 }
 
 func isEmpty(value any) bool {
-	if value == nil { return true }
+	if value == nil {
+		return true
+	}
 	rv := reflect.ValueOf(value)
 	switch rv.Kind() {
 	case reflect.String, reflect.Array, reflect.Slice, reflect.Map:
@@ -650,14 +819,18 @@ func isEmpty(value any) bool {
 }
 
 func isTruthy(value any) bool {
-	if value == nil { return false }
+	if value == nil {
+		return false
+	}
 	switch v := value.(type) {
 	case bool:
 		return v
 	case string:
 		return v != ""
 	default:
-		if n, ok := asFloat64(value); ok { return n != 0 }
+		if n, ok := asFloat64(value); ok {
+			return n != 0
+		}
 		rv := reflect.ValueOf(value)
 		switch rv.Kind() {
 		case reflect.Array, reflect.Slice, reflect.Map:
@@ -669,15 +842,21 @@ func isTruthy(value any) bool {
 }
 
 func cloneMap(source map[string]any) map[string]any {
-	if source == nil { return map[string]any{} }
+	if source == nil {
+		return map[string]any{}
+	}
 	out := make(map[string]any, len(source))
-	for key, value := range source { out[key] = value }
+	for key, value := range source {
+		out[key] = value
+	}
 	return out
 }
 
 func cloneNestedMap(source map[string]map[string]any) map[string]map[string]any {
 	out := make(map[string]map[string]any, len(source))
-	for key, value := range source { out[key] = cloneMap(value) }
+	for key, value := range source {
+		out[key] = cloneMap(value)
+	}
 	return out
 }
 
@@ -689,20 +868,35 @@ func markPendingSkipped(nodes map[string]*nodeRuntime) {
 	}
 }
 
-func resultFrom(state map[string]any, outputs map[string]map[string]any, nodes map[string]*nodeRuntime, ends map[string]map[string]any) *Result {
+func resultFrom(
+	runID string,
+	parentRunID string,
+	state map[string]any,
+	outputs map[string]map[string]any,
+	nodes map[string]*nodeRuntime,
+	nodeErrors map[string]ErrorValue,
+	ends map[string]map[string]any,
+	children map[string][]*Result,
+) *Result {
 	status := make(map[string]NodeStatus, len(nodes))
-	for id, rt := range nodes { status[id] = rt.status }
+	for id, rt := range nodes {
+		status[id] = rt.status
+	}
 	return &Result{
+		RunID: runID,
+		ParentRunID: parentRunID,
 		State: cloneMap(state),
 		NodeOutputs: cloneNestedMap(outputs),
 		NodeStatus: status,
+		NodeErrors: nodeErrors,
 		EndOutputs: cloneNestedMap(ends),
+		Children: children,
 	}
 }
 
 func maxInt(a, b int) int {
-	if a > b { return a }
+	if a > b {
+		return a
+	}
 	return b
 }
-
-var _ sync.Locker
