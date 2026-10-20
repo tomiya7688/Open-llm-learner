@@ -92,3 +92,30 @@ func TestRejectsSymlinkEscape(t *testing.T) {
 		t.Fatal("expected symlink escape to fail")
 	}
 }
+
+func TestPermissionGrantPersists(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "demo")
+	loaded, err := Create(dir, "Demo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	loaded.Project.Mods = append(loaded.Project.Mods, ModSelection{ID:"test.secure", Version:"1.0.0"})
+	changed, err := loaded.SetPermission("test.secure", "host.process", true)
+	if err != nil || !changed {
+		t.Fatalf("grant failed: changed=%v err=%v", changed, err)
+	}
+	if err := loaded.Save(); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(reopened.Project.Mods[0].Permissions) != 1 || reopened.Project.Mods[0].Permissions[0] != "host.process" {
+		t.Fatalf("permission did not persist: %#v", reopened.Project.Mods[0].Permissions)
+	}
+	changed, err = reopened.SetPermission("test.secure", "host.process", false)
+	if err != nil || !changed {
+		t.Fatalf("revoke failed: changed=%v err=%v", changed, err)
+	}
+}
