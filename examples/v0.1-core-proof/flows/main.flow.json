@@ -1,0 +1,80 @@
+{
+  "format": "open-llm-learner.flow",
+  "format_version": 1,
+  "id": "main",
+  "name": "Reference MOD call + subflow + branch",
+  "inputs": {
+    "message": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "outputs": {
+    "message": {
+      "type": "string"
+    }
+  },
+  "nodes": [
+    {
+      "id": "start",
+      "type": "start"
+    },
+    {
+      "id": "delegate",
+      "type": "mod",
+      "capability": "reference.json.delegate",
+      "after": ["start"],
+      "inputs": {
+        "capability": "reference.echo",
+        "payload": {
+          "message": "$flow.message"
+        }
+      }
+    },
+    {
+      "id": "wrap",
+      "type": "flow.call",
+      "flow": "flows/wrap.flow.json",
+      "after": ["delegate"],
+      "inputs": {
+        "message": "$node.delegate.message"
+      }
+    },
+    {
+      "id": "has_message",
+      "type": "branch",
+      "after": ["wrap"],
+      "inputs": {
+        "message": "$node.wrap.message"
+      },
+      "condition": {
+        "value": "$input.message",
+        "op": "truthy"
+      }
+    },
+    {
+      "id": "success",
+      "type": "end",
+      "inputs": {
+        "message": "$node.wrap.message"
+      }
+    },
+    {
+      "id": "empty",
+      "type": "end",
+      "inputs": {
+        "message": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "has_message.true",
+      "to": "success._control"
+    },
+    {
+      "from": "has_message.false",
+      "to": "empty._control"
+    }
+  ]
+}
