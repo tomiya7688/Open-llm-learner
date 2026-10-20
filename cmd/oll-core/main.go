@@ -53,8 +53,7 @@ func projectCommand(args []string) error {
 	if err := loaded.ValidateEntrypoints(); err != nil {
 		return err
 	}
-	fmt.Printf("project %s is valid (%d entrypoints)
-", loaded.Project.ID, len(loaded.Project.Entrypoints))
+	fmt.Printf("project %s is valid (%d entrypoints)\n", loaded.Project.ID, len(loaded.Project.Entrypoints))
 	return nil
 }
 
@@ -71,8 +70,7 @@ func modCommand(args []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("%s %s protocol=%s concurrency=%s actions=%d
-", m.ID, m.Version, m.Protocol, m.Concurrency, len(m.Provides))
+		fmt.Printf("%s %s protocol=%s concurrency=%s actions=%d\n", m.ID, m.Version, m.Protocol, m.Concurrency, len(m.Provides))
 		return nil
 	case "invoke":
 		return invokeCommand(args[1:])
@@ -85,7 +83,7 @@ func invokeCommand(args []string) error {
 	fs := flag.NewFlagSet("mod invoke", flag.ContinueOnError)
 	packageDir := fs.String("package", "", "MOD package directory")
 	action := fs.String("action", "", "action name")
-	inputText := fs.String("input", `{}`, "JSON input")
+	inputText := fs.String("input", "{}", "JSON input")
 	timeout := fs.Duration("timeout", 30*time.Second, "invocation timeout")
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -126,8 +124,7 @@ func invokeCommand(args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 	out, err := client.Invoke(ctx, *action, input, func(e protocol.Event) {
-		fmt.Fprintf(os.Stderr, "event %s: %s
-", e.Name, string(e.Data))
+		fmt.Fprintf(os.Stderr, "event %s: %s\n", e.Name, string(e.Data))
 	})
 	if err != nil {
 		return err
