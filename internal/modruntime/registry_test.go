@@ -207,3 +207,20 @@ func TestRegistryHelperProcess(t *testing.T) {
 		}
 	}
 }
+
+func TestParseResourceEstimate(t *testing.T) {
+	estimate, err := parseResourceEstimate(map[string]any{
+		"estimated_peak_ram_bytes": float64(1024),
+		"vram_bytes": float64(2048),
+		"disk_cache_bytes": float64(4096),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if estimate.RAMBytes != 1024 || estimate.VRAMBytes != 2048 || estimate.DiskCacheBytes != 4096 || !estimate.Heavy {
+		t.Fatalf("unexpected estimate: %+v", estimate)
+	}
+	if _, err := parseResourceEstimate(map[string]any{"ram_bytes": 1.5}); err == nil {
+		t.Fatal("expected fractional resource estimate to fail")
+	}
+}
