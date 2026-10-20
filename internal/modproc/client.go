@@ -54,6 +54,7 @@ type terminal struct {
 }
 
 type pendingInvocation struct {
+	ctx      context.Context
 	terminal chan terminal
 	onEvent  func(protocol.Event)
 }
@@ -88,7 +89,7 @@ func Start(ctx context.Context, cfg Config) (*Client, error) {
 		cfg.CoreVersion = "0.1.0"
 	}
 	if cfg.HandshakeTimeout <= 0 {
-		cfg.HandshakeTimeout = 5 * time.Second
+		cfg.HandshakeTimeout = 30 * time.Second
 	}
 	if cfg.CancellationGrace <= 0 {
 		cfg.CancellationGrace = 2 * time.Second
@@ -180,7 +181,7 @@ func (c *Client) Invoke(ctx context.Context, action string, input any, onEvent f
 		return nil, fmt.Errorf("marshal invocation input: %w", err)
 	}
 	id := fmt.Sprintf("inv-%d", c.counter.Add(1))
-	p := &pendingInvocation{terminal: make(chan terminal, 1), onEvent: onEvent}
+	p := &pendingInvocation{ctx: ctx, terminal: make(chan terminal, 1), onEvent: onEvent}
 	c.mu.Lock()
 	select {
 	case <-c.done:
@@ -317,7 +318,7 @@ func (c *Client) readLoop(stdout io.Reader) {
 		case "result", "error", "cancelled":
 			c.finishInvocation(msg.ID, terminal{msg: msg})
 		case "call":
-			go c.handleCall(msg)
+			go c.handleCall(msg, c.parentContext(msg.Parent))
 		case "shutdown_ack":
 			c.shutdownAckOnce.Do(func() { close(c.shutdownAck) })
 		default:
@@ -337,16 +338,20 @@ func (c *Client) waitLoop() {
 	c.finish(nil)
 }
 
-func (c *Client) handleCall(msg protocol.Message) {
-	if msg.ID == "" || msg.Target == nil {
-		_ = c.send(protocol.Message{Type: "call_error", ID: msg.ID, Error: &protocol.ErrorPayload{Code: "INVALID_REQUEST", Message: "call requires id and target"}})
+func (c *Client) handleCall(msg protocol.Message, parentCtx context.Context) {
+	if msg.ID == "" || msg.Target == nil || msg.Parent == "" {
+		_ = c.send(protocol.Message{Type: "call_error", ID: msg.ID, Error: &protocol.ErrorPayload{Code: "INVALID_REQUEST", Message: "call requires id, parent, and target"}})
+		return
+	}
+	if parentCtx == nil {
+		_ = c.send(protocol.Message{Type: "call_error", ID: msg.ID, Error: &protocol.ErrorPayload{Code: "INVALID_REQUEST", Message: "call references an unknown parent invocation"}})
 		return
 	}
 	if c.cfg.CallHandler == nil {
 		_ = c.send(protocol.Message{Type: "call_error", ID: msg.ID, Error: &protocol.ErrorPayload{Code: "CAPABILITY_NOT_FOUND", Message: "no Core call handler is configured"}})
 		return
 	}
-	out, err := c.cfg.CallHandler(context.Background(), protocol.CallRequest{ID: msg.ID, Parent: msg.Parent, Target: *msg.Target, Input: msg.Input})
+	out, err := c.cfg.CallHandler(parentCtx, protocol.CallRequest{ID: msg.ID, Parent: msg.Parent, Target: *msg.Target, Input: msg.Input})
 	if err != nil {
 		code := "INVALID_REQUEST"
 		message := err.Error()
@@ -364,6 +369,18 @@ func (c *Client) handleCall(msg protocol.Message) {
 		return
 	}
 	_ = c.send(protocol.Message{Type: "call_result", ID: msg.ID, Output: payload})
+}
+
+func (c *Client) parentContext(parentID string) context.Context {
+	if parentID == "" {
+		return nil
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if p := c.pending[parentID]; p != nil {
+		return p.ctx
+	}
+	return nil
 }
 
 func (c *Client) dispatchEvent(msg protocol.Message) {
