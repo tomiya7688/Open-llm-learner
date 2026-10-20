@@ -335,3 +335,68 @@ Input -> LLM MOD -> Action -> Tool MOD -> Result -> Loop
 ```
 
 are both ordinary Flows from the Core's point of view.
+
+
+## 17. v0.1 executable routing conventions
+
+The v0.1 Core uses ordinary Edge ports for branch and loop routing rather than adding branch-specific edge objects.
+
+### Incoming edge groups
+
+Edges targeting the **same input port** are alternatives (OR).
+
+Edges targeting **different input ports** are all required (AND).
+
+For example, either branch may satisfy the same downstream control input:
+
+```text
+branch.true  ----\
+                  -> join._control
+branch.false ----/
+```
+
+`_control` is a reserved Core-only input name. It participates in dependency/routing decisions but is removed before a MOD action receives its input JSON.
+
+### Branch ports
+
+A `branch` node evaluates its `condition` and emits exactly one routing port:
+
+- `true` when the condition matches;
+- `false` otherwise.
+
+It also exposes `matched` as the boolean condition result for ordinary data use.
+
+An edge sourced from the non-selected routing port does not produce a token, so that path remains inactive unless another alternative edge satisfies the same downstream input port.
+
+### Loop ports and finite cycles
+
+A `loop` node evaluates `until` each time it is activated.
+
+- if `until` is true, it emits `done`;
+- otherwise, if the budget remains, it emits `continue`;
+- if `until` is still false after `max_iterations` body iterations, the Flow fails with a loop-limit error.
+
+A loop body is represented as an ordinary graph cycle. The body returns to the same loop input port used by the initial entry edge:
+
+```text
+start.go -> loop.tick
+             |
+             +-- continue -> body ... -> loop.tick
+             |
+             +-- done ----> next
+```
+
+Any cyclic strongly-connected component in a v0.1 Flow must contain at least one bounded `loop` node. A cycle with no `loop(max_iterations)` is rejected during validation.
+
+### Condition references
+
+The v0.1 evaluator supports the operators already defined in this draft plus `and`, `or`, and `not` composition.
+
+Runtime values may be referenced with:
+
+- `$state.name` — run-scoped state;
+- `$input.name` — the current node input;
+- `$flow.name` — Flow input;
+- `$node.node_id.port` — a previously produced node output.
+
+These references are Core control syntax; domain-specific expressions remain outside the Flow language.
