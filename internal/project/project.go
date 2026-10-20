@@ -8,13 +8,13 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/tomiya7688/Open-llm-learner/internal/flow"
 )
 
 const (
 	Format        = "open-llm-learner.project"
 	FormatVersion = 1
-	FlowFormat    = "open-llm-learner.flow"
-	FlowVersion   = 1
 )
 
 var defaultDirectories = []string{"flows", "configs", "refs", "schemas", "scripts", "packages"}
@@ -43,17 +43,6 @@ type Project struct {
 	Refs          map[string]string            `json:"refs,omitempty"`
 	Schemas       map[string]string            `json:"schemas,omitempty"`
 	Metadata      map[string]any                `json:"metadata,omitempty"`
-}
-
-type FlowDocument struct {
-	Format        string           `json:"format"`
-	FormatVersion int              `json:"format_version"`
-	ID            string           `json:"id"`
-	Name          string           `json:"name,omitempty"`
-	Inputs        map[string]any   `json:"inputs,omitempty"`
-	Outputs       map[string]any   `json:"outputs,omitempty"`
-	Nodes         []map[string]any `json:"nodes"`
-	Edges         []map[string]any `json:"edges,omitempty"`
 }
 
 type Loaded struct {
@@ -220,35 +209,7 @@ func (p *Project) Validate() error {
 	return nil
 }
 
-func (f *FlowDocument) Validate() error {
-	if f.Format != FlowFormat {
-		return fmt.Errorf("unsupported flow format %q", f.Format)
-	}
-	if f.FormatVersion != FlowVersion {
-		return fmt.Errorf("unsupported flow format_version %d", f.FormatVersion)
-	}
-	if strings.TrimSpace(f.ID) == "" {
-		return errors.New("flow id is required")
-	}
-	if f.Nodes == nil {
-		return errors.New("flow nodes is required")
-	}
-	seen := map[string]struct{}{}
-	for _, raw := range f.Nodes {
-		id, _ := raw["id"].(string)
-		nodeType, _ := raw["type"].(string)
-		if strings.TrimSpace(id) == "" || strings.TrimSpace(nodeType) == "" {
-			return errors.New("flow node requires id and type")
-		}
-		if _, ok := seen[id]; ok {
-			return fmt.Errorf("duplicate flow node id %q", id)
-		}
-		seen[id] = struct{}{}
-	}
-	return nil
-}
-
-func (l *Loaded) LoadFlow(rel string) (*FlowDocument, error) {
+func (l *Loaded) LoadFlow(rel string) (*flow.Document, error) {
 	if !strings.HasSuffix(rel, ".flow.json") {
 		return nil, errors.New("flow path must end in .flow.json")
 	}
@@ -260,14 +221,11 @@ func (l *Loaded) LoadFlow(rel string) (*FlowDocument, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read flow %q: %w", rel, err)
 	}
-	var f FlowDocument
-	if err := json.Unmarshal(b, &f); err != nil {
-		return nil, fmt.Errorf("parse flow %q: %w", rel, err)
+	f, err := flow.Decode(b)
+	if err != nil {
+		return nil, fmt.Errorf("load flow %q: %w", rel, err)
 	}
-	if err := f.Validate(); err != nil {
-		return nil, fmt.Errorf("validate flow %q: %w", rel, err)
-	}
-	return &f, nil
+	return f, nil
 }
 
 func (l *Loaded) ValidateEntrypoints() error {
