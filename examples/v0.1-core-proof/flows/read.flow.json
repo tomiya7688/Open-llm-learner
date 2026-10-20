@@ -1,0 +1,31 @@
+{
+  "format": "open-llm-learner.flow",
+  "format_version": 1,
+  "id": "read",
+  "name": "Permission-controlled text read",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "start"
+    },
+    {
+      "id": "read",
+      "type": "mod",
+      "capability": "reference.text.read",
+      "after": ["start"],
+      "inputs": {
+        "path": "../../../../README.md"
+      }
+    },
+    {
+      "id": "end",
+      "type": "end",
+      "after": ["read"],
+      "inputs": {
+        "text": "$node.read.text",
+        "bytes": "$node.read.bytes"
+      }
+    }
+  ],
+  "edges": []
+}
