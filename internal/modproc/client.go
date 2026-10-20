@@ -29,6 +29,14 @@ func (e *RemoteError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Code, e.Message)
 }
 
+func (e *RemoteError) ErrorCode() string {
+	return e.Code
+}
+
+func (e *RemoteError) ErrorDetails() map[string]any {
+	return e.Details
+}
+
 type CallHandler func(context.Context, protocol.CallRequest) (any, error)
 
 type Config struct {
