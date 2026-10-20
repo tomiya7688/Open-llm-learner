@@ -371,10 +371,8 @@ func TestSubflowFailureCanBeHandledByParent(t *testing.T) {
 	}}
 	child := baseDocument([]Node{
 		{ID:"start", Type:"start"},
-		{ID:"fail", Type:"mod", Mod:"test", Action:"fail"},
-	}, []Edge{
-		{From:"start.go", To:"fail._control"},
-	})
+		{ID:"fail", Type:"mod", Mod:"test", Action:"fail", After:[]string{"start"}},
+	}, nil)
 	child.ID = "child-failure"
 	parent := baseDocument([]Node{
 		{ID:"start", Type:"start"},
