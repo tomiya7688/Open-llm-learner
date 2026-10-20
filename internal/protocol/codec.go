@@ -43,8 +43,7 @@ func Encode(w io.Writer, msg Message) error {
 	if err != nil {
 		return fmt.Errorf("encode protocol message: %w", err)
 	}
-	b = append(b, '
-')
+	b = append(b, '\n')
 	_, err = w.Write(b)
 	return err
 }
