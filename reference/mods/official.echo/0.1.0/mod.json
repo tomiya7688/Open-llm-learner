@@ -1,0 +1,22 @@
+{
+  "format": "open-llm-learner.mod",
+  "format_version": 1,
+  "id": "official.echo",
+  "name": "Official Echo Reference MOD",
+  "version": "0.1.0",
+  "protocol": "1.0",
+  "entry": {
+    "command": "oll-mod-echo"
+  },
+  "concurrency": "parallel",
+  "provides": {
+    "echo": {
+      "capability": "reference.echo",
+      "description": "Return the input JSON unchanged."
+    },
+    "sleep": {
+      "capability": "reference.sleep",
+      "description": "Emit a status event, wait for the requested milliseconds, then return."
+    }
+  }
+}

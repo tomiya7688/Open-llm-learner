@@ -1,0 +1,46 @@
+{
+  "format": "open-llm-learner.project",
+  "format_version": 1,
+  "id": "v0.1-core-proof",
+  "name": "v0.1 Core Proof",
+  "entrypoints": {
+    "default": "flows/main.flow.json",
+    "timeout": "flows/timeout.flow.json",
+    "read": "flows/read.flow.json"
+  },
+  "mods": [
+    {
+      "id": "official.echo",
+      "version": "0.1.0"
+    },
+    {
+      "id": "official.json",
+      "version": "0.1.0"
+    },
+    {
+      "id": "official.text",
+      "version": "0.1.0",
+      "permissions": [
+        "host.filesystem.read"
+      ]
+    }
+  ],
+  "capabilities": {
+    "reference.echo": {
+      "mod": "official.echo",
+      "action": "echo"
+    },
+    "reference.sleep": {
+      "mod": "official.echo",
+      "action": "sleep"
+    },
+    "reference.json.delegate": {
+      "mod": "official.json",
+      "action": "delegate"
+    },
+    "reference.text.read": {
+      "mod": "official.text",
+      "action": "read_text"
+    }
+  }
+}
