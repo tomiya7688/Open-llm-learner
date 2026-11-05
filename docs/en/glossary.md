@@ -5,6 +5,18 @@ Status: **user-facing draft**
 ## Project
 The saved unit of work containing or referencing models, datasets, Flows, MODs, settings, permissions, scripts, and artifacts.
 
+## Model Builder
+The task-first model creation workflow that resolves Dataset Contracts, Model Recipes, Training Methods, evaluation, and export. It is not limited to LLMs.
+
+## Task
+The semantic job a model is trained to perform, such as generation, code transformation, classification, judgment, extraction, or ranking.
+
+## Model Recipe
+A replaceable definition of how a Task is realized through an architecture family, training objective, compatible training methods, and runtime capability.
+
+## Dataset Contract
+The meaning and schema of training inputs and targets for a Task.
+
 ## Flow
 The JSON-defined execution graph describing what runs and in what order.
 
