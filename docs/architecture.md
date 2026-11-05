@@ -274,6 +274,14 @@ my-project/
 ├─ flows/
 │  ├─ train.flow.json
 │  └─ agent.flow.json
+├─ tasks/
+│  └─ *.task.json
+├─ dataset-contracts/
+│  └─ *.dataset-contract.json
+├─ recipes/
+│  └─ *.recipe.json
+├─ mappings/
+│  └─ *.dataset-map.json
 ├─ configs/
 │  ├─ training.config.json
 │  └─ runtime.config.json
@@ -293,6 +301,10 @@ The exact set of directories may grow as features are added. The important rule 
 Suggested suffixes:
 
 - `.flow.json` for Flow definitions;
+- `.task.json` for Task definitions;
+- `.dataset-contract.json` for Dataset Contracts;
+- `.recipe.json` for Model Recipes;
+- `.dataset-map.json` for Dataset mappings;
 - `.config.json` for configuration;
 - `.ref.json` for external or artifact references;
 - `.schema.json` for JSON Schema documents.
