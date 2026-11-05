@@ -37,9 +37,12 @@ Weight Export / Runtime Export / AI Package
 
 - [製品の方向性](product-direction.md)
 - [TaskとModel Capability](model-tasks.md)
+- [Standard Task Catalog](standard-task-catalog.md)
+- [Official Model Recipe Catalog](official-recipe-catalog.md)
 - [Contextと構造化Input](context-and-structured-input.md)
 - [複数Modelの組み合わせ](model-composition.md)
 - [小型用途特化モデル戦略](small-model-strategy.md)
+- [Model Size / Resource Budget](model-size-and-budget.md)
 
 ## 2. Model Builder
 
@@ -48,6 +51,9 @@ Weight Export / Runtime Export / AI Package
 - [Recipe Recommendation](recipe-recommendation.md)
 - [Model Size / Resource Budget](model-size-and-budget.md)
 - [Model Preset / Template](presets-and-templates.md)
+- [Config Resolution](config-resolution.md)
+- [Model Builder Flow](model-builder-flow.md)
+- [Task / Recipe Versioning](versioning-and-migration.md)
 
 ## 3. Dataset / Text Representation
 
@@ -61,17 +67,23 @@ Weight Export / Runtime Export / AI Package
 - [Training Stage / Pipeline](training-stages.md)
 - [LLM学習](llm-training.md)
 - [Teacher / Distillation](distillation-and-teacher.md)
+- [Training Stage / Pipeline](training-stages.md)
+- [Teacher / Distillation](distillation-and-teacher.md)
 
 ## 5. Evaluation / Artifact / Runtime
 
 - [Evaluation](evaluation.md)
 - [Model Artifact Lifecycle](model-artifact-lifecycle.md)
 - [Runtime Capability Contract](runtime-capability-contracts.md)
+- [Model Artifact Lifecycle](model-artifact-lifecycle.md)
+- [Testing / Compatibility](testing-and-compatibility.md)
 - [Testing / Compatibility](testing-and-compatibility.md)
 
 ## 6. 代表ユースケース
 
 - [用途特化モデルの例](specialized-model-examples.md)
+- [Code Model](code-models.md)
+- [ゲーム・アプリ組み込みModel](game-embedded-models.md)
 - [Code Model](code-models.md)
 - [ゲーム・アプリ組み込みModel](game-embedded-models.md)
 
