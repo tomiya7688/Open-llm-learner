@@ -5,10 +5,10 @@ Status: **user-facing draft**
 The Open LLM Learner GUI is a visual control panel for the same operations available through the Shell/CLI. It does not use a separate execution model.
 
 ## Projects
-Use New Project / Open Project to create or open a Project. Once open, the main panels are Weight Builder, Agent Builder, Flow, Models, MODs, Runs, Export, and Settings.
+Use New Project / Open Project to create or open a Project. Once open, the main panels are Model Builder, Agent Builder, Flow, Models, MODs, Runs, Export, and Settings.
 
-## Weight Builder
-Select the Base Model, Dataset, training method, recipe, and memory policy, run Preflight, then start training.
+## Model Builder
+Start by selecting the task the model should perform, then choose/map the Dataset, Model Recipe, Training Method, and memory policy. LLMs and smaller specialized models use the same Model Builder.
 
 The GUI may show:
 - Full Fine-tuning / LoRA / Streamed LoRA
