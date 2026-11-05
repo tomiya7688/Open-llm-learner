@@ -115,11 +115,16 @@ Quality assurance scope and architectural capability are separate concerns.
 
 Important target use cases include:
 
-- character LLMs;
-- small task-specific local models;
+- small task-specific Transformer models;
+- text classification, extraction, ranking, and judgment models;
+- instruction-driven code transformation models;
+- game-local help/NPC models;
+- character and general-purpose LLMs;
 - coding agents specialized for narrow tasks such as CI repair;
 - user-defined local AI systems;
-- larger custom models where the user provides the required compute environment.
+- larger custom dense or MoE language models where the user provides the required compute environment.
+
+The architecture must support both "one large model" and "several small specialized models connected by Flow."
 
 ## 7. Initial official MOD direction
 
@@ -312,50 +317,61 @@ A single AI Package may use multiple specialized models: for example a judgment 
 See `docs/model-capabilities-draft.md`.
 
 
-## 17. Model scope is text-centered
+## 17. Model scope is text-centered and task-first
 
-Open LLM Learner is primarily a **text-to-text model creation and AI construction tool**.
+Open LLM Learner is primarily a **text-centered model creation and AI construction tool**.
 
-The model abstraction remains architecture-neutral, but project scope is intentionally narrower than "all machine learning models."
+It does not assume that the model being created is an LLM.
 
 ### Primary scope
 
-- text -> text generation;
-- text/chat -> structured decision or score;
-- text-bearing multimodal input -> text;
-- other model tasks closely connected to language-model workflows.
+First-class model tasks include:
+
+- text generation / chat;
+- text and code transformation/editing;
+- classification;
+- decision/judgment;
+- extraction;
+- ranking/scoring;
+- template/structured filling;
+- embedding;
+- text-bearing multimodal -> text;
+- LLM pretraining/fine-tuning.
+
+Transformer Encoder, Encoder-Decoder, Decoder-only, MoE, Judgment, and other suitable architectures may all be first-class recipes.
 
 ### Secondary / optional scope
 
-Models where at least one side of the model interface is text may be supported when useful to an LLM workflow.
+Models where at least one side of the model interface is text may be supported when useful.
 
 Examples:
 
 - text -> image generation;
 - image -> text interpretation;
-- image + text -> text;
-- text -> embedding/vector;
-- text -> typed judgment.
+- image + text -> text.
 
-These are supported as extensions, not as the main product target.
-
-LLM-based image generation may receive lightweight/reference support when it can fit naturally into the MOD model.
+These remain extensions rather than the center of the product.
 
 ### Out of scope
 
-Models whose **input and output are both non-text** are not a project target.
+Models whose **input and output are both non-text** are not a first-class project target.
 
 Examples include:
 
-- image -> image model pipelines;
-- audio -> audio models;
+- image -> image;
+- audio -> audio;
 - image -> audio;
-- pure vision-to-vector systems with no text-facing interface;
 - general-purpose non-language ML pipelines.
 
-Such capabilities may still be reachable through external adapters or generic MODs, but Open LLM Learner does not need first-class Weight Builder, training UX, or quality guarantees for them.
+Generic MODs and external adapters may still invoke such systems.
 
-This boundary prevents the project from growing into a general ML studio while keeping language-model-adjacent multimodal features possible.
+### Task-first principle
+
+The Model Builder starts from the task and selects compatible Dataset Contracts, Model Recipes, Training Methods, and Evaluation.
+
+A decoder-only LLM is a first-class recipe, but not the universal default.
+
+See `docs/design/product-direction.md`, `docs/design/model-tasks.md`, and `docs/design/model-builder.md`.
 
 
 ## 18. Weight artifacts and Packages are independent distribution products
@@ -434,3 +450,40 @@ Memory-aware MODs may expose lower-memory plans such as resident, CPU offload, l
 Auto mode must preserve host headroom rather than target 100% RAM/VRAM utilization.
 
 See `docs/resource-safety-draft.md`.
+
+
+## 22. Model creation uses Task -> Recipe -> Training
+
+Model creation is expressed through four distinct concepts:
+
+1. **Task** — the semantic job the model should learn;
+2. **Dataset Contract** — how training examples represent that job;
+3. **Model Recipe** — architecture family, objective, runtime capability, and compatible training methods;
+4. **Training Method** — scratch training, full fine-tuning, head-only, adapter/LoRA, distillation, preference/ranking training, partitioned streaming, etc.
+
+This prevents model creation from collapsing into "CausalLM + dataset."
+
+Examples:
+
+```text
+code_transform
+ -> structured_edit recipe
+ -> supervised task training
+ -> model.code.transform
+```
+
+```text
+text_classification
+ -> transformer_encoder recipe
+ -> head-only or full fine-tuning
+ -> model.text.classify
+```
+
+```text
+general_text_generation
+ -> decoder_llm recipe
+ -> pretraining / SFT / LoRA
+ -> model.text.generate
+```
+
+See `docs/design/`.
