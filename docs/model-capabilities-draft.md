@@ -11,7 +11,7 @@ Open LLM Learner must not assume that every model is:
 
 The Core and project format should work with models through declared capabilities.
 
-Open LLM Learner remains text-centered: text-to-text is the primary target. A model may be supported when at least one side of its interface is text, but models with neither text input nor text output are outside first-class project scope.
+Open LLM Learner remains text-centered, but it is task-first rather than LLM-first. Text generation is one primary task alongside transformation/editing, classification, extraction, ranking, decision/judgment, filling, and embedding. Models with neither text input nor text output remain outside first-class project scope.
 
 ## Principle
 
@@ -20,9 +20,13 @@ A model implementation exposes what it can do.
 Examples:
 
 - text generation;
+- text/code transformation;
+- text classification;
 - typed decision / judgment from text-bearing context;
-- text embeddings;
+- field/span extraction;
+- template/structured filling;
 - text ranking / scoring;
+- text embeddings;
 - image-to-text understanding;
 - text-to-image generation;
 - multimodal-to-text generation;
@@ -35,6 +39,12 @@ Architecture names such as Transformer, state-space model, recurrent model, hybr
 Initial capability identifiers may include:
 
 - `model.text.generate`
+- `model.text.transform`
+- `model.code.transform`
+- `model.text.classify`
+- `model.text.extract`
+- `model.text.fill`
+- `model.rank`
 - `model.decision.evaluate`
 - `model.embedding.create`
 - `model.score`
@@ -130,12 +140,18 @@ Training MODs declare what model/task types they support.
 Examples:
 
 - causal text generation;
-- decision / classification;
+- text/code transformation;
+- classification;
+- extraction;
+- structured filling;
+- decision/judgment;
 - ranking;
 - embedding;
-- multimodal tasks.
+- multimodal-to-text tasks.
 
-The Weight Builder should choose available training recipes based on declared support rather than assuming causal language modeling.
+The Model Builder chooses available Task definitions, Dataset Contracts, Model Recipes, and Training Methods based on declared support rather than assuming causal language modeling.
+
+A Training MOD may support multiple tasks and multiple recipe families.
 
 ## Non-Transformer language models
 
@@ -201,16 +217,21 @@ This is preferred over forcing every task through a single generative LLM.
 
 ### Tier 1: primary
 
-Text-to-text and closely related language-model tasks.
+Text-centered trainable model tasks.
 
 Examples:
 
 - chat / completion;
 - code generation;
-- rewriting;
-- structured text output;
-- text-driven decision models;
-- text-driven agents.
+- text/code transformation;
+- classification;
+- extraction;
+- structured filling;
+- ranking;
+- embedding;
+- decision/judgment;
+- text-driven agents;
+- LLM pretraining and adaptation.
 
 This is the main design, testing, documentation, and UX target.
 
@@ -222,9 +243,7 @@ Examples:
 
 - text -> image;
 - image -> text;
-- image + text -> text;
-- text -> vector;
-- text -> bounded decision.
+- image + text -> text.
 
 These may be implemented by official reference MODs, community MODs, or external adapters.
 
@@ -241,7 +260,7 @@ Examples:
 - image -> audio;
 - arbitrary vision-only or signal-processing models.
 
-Generic MODs may still technically invoke such systems, but Weight Builder and model-specific UX do not need to support them.
+Generic MODs may still technically invoke such systems, but Model Builder and model-specific UX do not need to support them.
 
 ## Image generation
 
@@ -253,3 +272,22 @@ Two routes are appropriate:
 2. delegation to external systems such as ComfyUI for advanced workflows.
 
 The project should avoid becoming a general image-model training suite.
+
+
+## Task-first model creation
+
+Capabilities describe runtime behavior. They are not training objectives.
+
+Model Builder resolves:
+
+```text
+Task
+ -> Dataset Contract
+ -> Model Recipe
+ -> Training Method
+ -> Runtime Capability
+```
+
+For example, `model.code.transform` may be implemented by an Encoder-Decoder that returns complete code or by a smaller structured-edit model that returns an edit operation.
+
+See `docs/design/model-tasks.md` and `docs/design/model-recipes.md`.
