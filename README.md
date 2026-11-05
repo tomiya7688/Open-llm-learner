@@ -1,6 +1,6 @@
 # Open LLM Learner
 
-Open LLM Learner is an open-source project for building your own models and AI systems without locking users into one training stack, runtime, or agent framework.
+Open LLM Learner is an open-source project for building task-specific text-centered models, LLMs, and AI systems without locking users into one training stack, runtime, or agent framework.
 
 The application/Core is planned in **Go**. Flow files are **JSON**. Local MOD communication uses **stdio + JSON**.
 
@@ -10,13 +10,14 @@ The project is built around a small core that implements **flows**. Actual capab
 
 Open LLM Learner aims to make it practical for individuals and organizations to:
 
-- create model weights from their own datasets;
+- create model weights from their own datasets for tasks such as generation, editing, classification, extraction, ranking, judgment, and embedding;
 - perform native fine-tuning, LoRA training, and other training methods through replaceable MODs;
 - export weights for use in existing runtimes and applications;
 - build AI packages that combine a model with tools, scripts, prompts, and behavior;
 - create anything from character LLMs to small task-specialized coding agents;
 - use generative models, decision/judgment models, and non-Transformer model architectures through the same Flow/MOD foundation;
-- primarily target text-to-text models while allowing secondary model capabilities where either the input or output is text;
+- choose a model recipe from the task instead of assuming every problem needs a generative LLM;
+- treat LLM training as a first-class recipe while also supporting smaller Transformer and non-Transformer task models;
 - replace official functionality with community or private implementations when more advanced behavior is needed.
 
 Large-model workflows should be possible by design, even when the reference project cannot quality-assure every large-scale hardware configuration.
@@ -67,11 +68,40 @@ The Core itself does not need to know these languages.
 
 Official features must not require users to prepare a system Python environment. If an official MOD is implemented in Python, it should be distributed as a self-contained built package. The official Python Runner should likewise provide/manage its own runtime rather than requiring a preinstalled system Python.
 
+## Task-first model creation
+
+Open LLM Learner starts from the work the user wants a model to perform.
+
+```text
+Task
+ -> Dataset Contract
+ -> Model Recipe
+ -> Training Method
+ -> Evaluation
+ -> Model Artifact
+```
+
+Examples include:
+
+- text generation and chat;
+- code generation and code transformation;
+- classification and routing;
+- decision/judgment;
+- extraction;
+- ranking;
+- template filling;
+- small game-help models;
+- full LLM training and adaptation.
+
+A large decoder-only LLM is one important option, not the default answer to every task.
+
+See [docs/design/README.md](docs/design/README.md).
+
 ## Two separate products on the same foundation
 
-### Weight generation
+### Model / weight generation
 
-Create weights that can be taken outside Open LLM Learner and used with existing runtimes, applications, or custom software.
+Create task-specific model weights or LLM weights that can be taken outside Open LLM Learner and used with existing runtimes, applications, or custom software.
 
 Examples include:
 
@@ -170,7 +200,7 @@ For local autonomous execution, the Core also provides host-level safety: **Emer
 
 Early design stage. Specifications are being drafted before implementation.
 
-See [docs/architecture.md](docs/architecture.md), [docs/flow-v1-draft.md](docs/flow-v1-draft.md), [docs/mod-protocol-v1.md](docs/mod-protocol-v1.md), [docs/mod-package-v1.md](docs/mod-package-v1.md), [docs/project-format-v1.md](docs/project-format-v1.md), [docs/moe-design-draft.md](docs/moe-design-draft.md), [docs/model-capabilities-draft.md](docs/model-capabilities-draft.md), [docs/agent-presets-v1-draft.md](docs/agent-presets-v1-draft.md), [docs/low-memory-streaming-draft.md](docs/low-memory-streaming-draft.md), [docs/runtime-export-v1-draft.md](docs/runtime-export-v1-draft.md), and [docs/milestones.md](docs/milestones.md).
+See [docs/design/README.md](docs/design/README.md), [docs/architecture.md](docs/architecture.md), [docs/flow-v1-draft.md](docs/flow-v1-draft.md), [docs/mod-protocol-v1.md](docs/mod-protocol-v1.md), [docs/mod-package-v1.md](docs/mod-package-v1.md), [docs/project-format-v1.md](docs/project-format-v1.md), [docs/moe-design-draft.md](docs/moe-design-draft.md), [docs/model-capabilities-draft.md](docs/model-capabilities-draft.md), [docs/agent-presets-v1-draft.md](docs/agent-presets-v1-draft.md), [docs/low-memory-streaming-draft.md](docs/low-memory-streaming-draft.md), [docs/runtime-export-v1-draft.md](docs/runtime-export-v1-draft.md), and [docs/milestones.md](docs/milestones.md).
 
 ## License
 
