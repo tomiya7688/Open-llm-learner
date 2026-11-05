@@ -42,6 +42,10 @@ Weight Export / Runtime Export / AI Package
 - [学習方式](training-methods.md)
 - [LLM学習](llm-training.md)
 - [用途特化モデルの例](specialized-model-examples.md)
+- [Dataset Contract](dataset-contracts.md)
+- [Evaluation](evaluation.md)
+- [複数Modelの組み合わせ](model-composition.md)
+- [Contextと構造化Input](context-and-structured-input.md)
 
 既存のprotocol、Flow、MOD、Package等の仕様書は `docs/` 直下に残します。
 この `docs/design/` は「何を作るか、どういう製品にするか」をまとめる設計書です。
