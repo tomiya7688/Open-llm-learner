@@ -2,9 +2,9 @@
 
 このディレクトリは日本語利用者向けです。
 
-- [用語集](glossary.md)
-- [GUIガイド](gui.md)
-- [Shell / CLIガイド](shell.md)
+- [用語集](用語集.md)
+- [画面操作の説明](画面操作.md)
+- [コマンド操作の説明](コマンド操作.md)
 
 GUIとShellは同じProject / Flow / MOD / Artifactを操作します。GUIはShellで行える操作を視覚化した操作パネルです。
 
