@@ -184,9 +184,9 @@ Third-party models, datasets, MODs, APIs, and derived artifacts remain subject t
 ### 日本語
 
 - [日本語ドキュメント](docs/jp/README.md)
-- [用語集](docs/jp/glossary.md)
-- [GUIガイド](docs/jp/gui.md)
-- [Shell / CLIガイド](docs/jp/shell.md)
+- [用語集](docs/jp/用語集.md)
+- [画面操作の説明](docs/jp/画面操作.md)
+- [コマンド操作の説明](docs/jp/コマンド操作.md)
 
 ### English
 
