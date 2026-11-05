@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-llm-learner.local/schemas/dataset-map.schema.json",
+  "title": "Open LLM Learner Dataset Mapping",
+  "type": "object",
+  "required": [
+    "format",
+    "format_version",
+    "id",
+    "source",
+    "contract",
+    "map"
+  ],
+  "properties": {
+    "format": {
+      "const": "open-llm-learner.dataset-map"
+    },
+    "format_version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "contract": {
+      "type": "string",
+      "minLength": 1
+    },
+    "map": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "transforms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "split": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
