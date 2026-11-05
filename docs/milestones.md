@@ -2,7 +2,7 @@
 
 ## v0.1 — Core proof
 
-v0.1 is intentionally loose. Its purpose is to prove the architecture, not to be a useful LLM product yet.
+v0.1 is intentionally loose. Its purpose is to prove the architecture, not to be a complete model-building product yet.
 
 Minimum success criteria:
 
@@ -27,7 +27,7 @@ Minimum success criteria:
 
 Not required for v0.1:
 
-- real LLM training;
+- real model/LLM training;
 - polished GUI;
 - MOD registry;
 - strong hostile-code sandbox;
@@ -40,8 +40,12 @@ During 0.x, add practical official MODs and harden the protocol without promisin
 
 Priority areas:
 
+- Task / Dataset Contract / Model Recipe definitions;
+- task-first Model Builder;
 - self-contained Python Runner;
 - official training MOD(s);
+- at least one small specialized Transformer recipe;
+- official LLM training recipes;
 - file/text operations;
 - command execution;
 - model loading/inference;
@@ -51,24 +55,28 @@ Priority areas:
 - ComfyUI adapter;
 - additional script runners.
 
-## v1.0 — End-to-end useful LLM system
+## v1.0 — End-to-end useful model and AI system
 
-v1.0 means a user can actually create a model and use it to perform a real task.
+v1.0 means a user can create a task-specific model or LLM, evaluate/export it, and use models to perform real tasks.
 
 Minimum product criteria:
 
-### Weight generation
+### Model creation
 
-- user can select a supported base model;
-- user can provide training data;
-- at least one reference model family is supported end-to-end;
+- user starts from a Task rather than being forced to choose a CausalLM;
+- Dataset is mapped to a Task-specific Dataset Contract;
+- Model Builder can recommend compatible Model Recipes;
+- at least one specialized non-generative/task model path is supported end-to-end;
+- at least one LLM/generative model family is supported end-to-end;
 - native/full fine-tuning works for a supported path;
-- LoRA fine-tuning works for a supported path;
+- LoRA/Adapter training works for a supported path where appropriate;
+- training from scratch or head-only/partial training is supported by at least one task recipe;
+- task-specific evaluation runs before export;
 - training settings have usable defaults but remain editable;
 - training progress and errors are visible;
 - resulting weights/adapters are saved as portable artifacts;
 - user can test the trained model;
-- export path exists for practical external use.
+- Weight Export and Runtime Export exist for practical external use.
 
 ### AI / task execution
 
@@ -125,3 +133,19 @@ The agent must support pause/resume/cancel/user steering and must obey project p
 A coding/CI-fix reference task is the primary acceptance case.
 
 See `docs/official-autonomous-agent-draft.md`.
+
+
+## v1.0 model-direction acceptance
+
+The v1.0 product must prove that Open LLM Learner is not only an LLM fine-tuning UI.
+
+At minimum, acceptance includes:
+
+1. one LLM/generative path;
+2. one smaller specialized task-model path whose primary runtime capability is not generic free-form generation;
+3. both created through the same Task -> Dataset Contract -> Recipe -> Training -> Evaluation -> Export model;
+4. no Core changes required to add another task/recipe family.
+
+Reference specialized candidates include code transformation, classification/judgment, ranking, or extraction.
+
+See `docs/design/`.
