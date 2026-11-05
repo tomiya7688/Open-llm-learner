@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-llm-learner.local/schemas/dataset-contract.schema.json",
+  "title": "Open LLM Learner Dataset Contract",
+  "type": "object",
+  "required": [
+    "format",
+    "format_version",
+    "id",
+    "name",
+    "input_schema",
+    "target_schema"
+  ],
+  "properties": {
+    "format": {
+      "const": "open-llm-learner.dataset-contract"
+    },
+    "format_version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "input_schema": {
+      "type": "object"
+    },
+    "target_schema": {
+      "type": "object"
+    },
+    "optional_context_schema": {
+      "type": "object"
+    },
+    "split_policy": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
