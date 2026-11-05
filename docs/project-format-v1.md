@@ -11,6 +11,14 @@ my-project/
 ├─ project.json
 ├─ flows/
 │  └─ *.flow.json
+├─ tasks/
+│  └─ *.task.json
+├─ dataset-contracts/
+│  └─ *.dataset-contract.json
+├─ recipes/
+│  └─ *.recipe.json
+├─ mappings/
+│  └─ *.dataset-map.json
 ├─ configs/
 │  └─ *.config.json
 ├─ refs/
@@ -168,3 +176,25 @@ The numeric values above are examples, not fixed defaults.
 Auto mode must preserve RAM/VRAM headroom and must not target 100% usage.
 
 Runtime/Training MODs may receive these constraints and respond with a lower-memory plan.
+
+
+## Model creation documents
+
+Task-first Model Builder projects may store the following documents:
+
+- `tasks/*.task.json` — semantic model task definition;
+- `dataset-contracts/*.dataset-contract.json` — training example input/target contract;
+- `recipes/*.recipe.json` — compatible model architecture/objective/training recipe;
+- `mappings/*.dataset-map.json` — mapping from physical dataset fields into a Dataset Contract.
+
+These documents are optional for Projects that only consume existing models.
+
+They are normal project documents and may be provided by official, community, or user-defined model-building workflows.
+
+Suggested schema files:
+
+- `schemas/task.schema.json`;
+- `schemas/dataset-contract.schema.json`;
+- `schemas/model-recipe.schema.json`.
+
+The Core should transport/reference these documents but does not need to understand architecture-specific fields inside a Model Recipe.
