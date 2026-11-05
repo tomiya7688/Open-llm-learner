@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-llm-learner.local/schemas/model-preset.schema.json",
+  "title": "Open LLM Learner Model Preset",
+  "type": "object",
+  "required": [
+    "format",
+    "format_version",
+    "id",
+    "name",
+    "recipe",
+    "defaults"
+  ],
+  "properties": {
+    "format": {
+      "const": "open-llm-learner.model-preset"
+    },
+    "format_version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "recipe": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "resource_hints": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
