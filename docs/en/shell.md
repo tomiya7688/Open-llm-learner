@@ -20,6 +20,17 @@ The GUI is a visual control panel for the same operations.
 `ollm mod inspect official.file` — inspect a MOD.
 `ollm mod validate ./path/to/mod` — validate a MOD Package.
 
+## Model Builder
+
+Planned operations include:
+
+- `ollm model create ./project`
+- `ollm model task set code-transform`
+- `ollm model recipe recommend`
+- `ollm model evaluate`
+
+LLM creation uses the same Model Builder path.
+
 ## Training
 `ollm train ./project --entry train` — run the training Flow.
 `ollm train ./project --config configs/training.config.json` — use a specific training config.
