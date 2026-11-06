@@ -193,3 +193,66 @@ AI Package/Flowが複数Recipe成果物を組み合わせます。
 5. one Runtime Export path.
 
 この少数経路をE2Eで固めた後、Recipeを増やします。
+
+
+## 13. Linear / TF-IDF Classifier
+
+Task:
+- text_classification;
+- simple routing/intent.
+
+Architecture:
+- sparse text features + linear classifier.
+
+Target:
+- CPU;
+- very small memory;
+- fast startup.
+
+## 14. CRF Sequence Model
+
+Task:
+- extraction;
+- sequence labeling.
+
+Architecture:
+- statistical CRF or neural encoder + CRF.
+
+## 15. Text CNN
+
+Task:
+- classification;
+- short-text intent;
+- character-pattern tasks.
+
+## 16. RNN / GRU / LSTM
+
+Task:
+- classification;
+- sequence labeling;
+- short generation;
+- streaming sequence processing.
+
+Purpose:
+- prove non-Transformer neural recipes are first-class.
+
+## 17. State Space / Recurrent-State Language Model
+
+Task:
+- text_generation;
+- sequence modeling.
+
+Purpose:
+- provide a language-model path that does not require Transformer attention.
+
+## 18. Rule / Retrieval Recipe
+
+Some language tasks are best served by no trainable neural model.
+
+Examples:
+- exact/keyword match;
+- template;
+- BM25-like retrieval;
+- deterministic parser.
+
+These may be recommended by Model Builder and participate as normal Capability providers in Flow.
