@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-llm-learner.local/schemas/prune-plan.schema.json",
+  "title": "Open LLM Learner Prune Plan",
+  "type": "object",
+  "required": [
+    "format",
+    "format_version",
+    "source_model_ref",
+    "operations"
+  ],
+  "properties": {
+    "format": {
+      "const": "open-llm-learner.prune-plan"
+    },
+    "format_version": {
+      "const": 1
+    },
+    "source_model_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "profile_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "strategy": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "kind",
+          "target"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "target": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "score": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "estimated_result": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "quality_gate": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
