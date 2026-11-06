@@ -42,6 +42,7 @@ Weight Export / Runtime Export / AI Package
 - [Contextと構造化Input](context-and-structured-input.md)
 - [複数Modelの組み合わせ](model-composition.md)
 - [小型用途特化モデル戦略](small-model-strategy.md)
+- [反復Prune / Retrain](iterative-prune-retrain.md)
 - [Model Size / Resource Budget](model-size-and-budget.md)
 
 ## 2. Model Builder
