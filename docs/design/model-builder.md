@@ -39,21 +39,30 @@ Model Builderは「データから重みを作る画面」だけではありま�
 GUI例:
 
 ```text
-何を作りますか？
+何をしたいですか？
 
-○ 会話・文章生成
-○ コード生成
-○ コード修正
-○ テキスト変換
-○ 分類
-○ 判断・候補選択
-○ 情報抽出
-○ Ranking
-○ Template補完
-○ 自分でTaskを定義
+[文章を作る]
+[文章を書き換える]
+[種類を判定する]
+[必要な情報を取り出す]
+[候補から選ぶ]
+[候補を並べ替える]
+[似ているものを探す]
+[コードを書く]
+[コードを直す]
+[質問に答える]
+[自分で組み合わせる]
 ```
 
-Taskによって不要な設定は隠します。
+複数Stepは:
+
+```text
+「質問か判定し、Helpから答えを探し、おじいさん風に返す」
+```
+
+のような自然な操作文として表示し、内部ではTask Composition / Flowへ展開します。
+
+Taskによって不要な設定は隠します。初心者向け画面ではTransformerやCRF等の方式名を最初に要求しません。
 
 分類器を作る利用者にtemperatureやchat templateを最初から見せません。
 
@@ -214,3 +223,22 @@ ollm export ...
 Recycleでは、例えば3B Modelから0.5Bを削り、その0.5Bを新しいTaskへ重点学習するFresh Capacityとして再配置できます。
 
 Model Builderは総Parameter Budget、Recycle量、Protected Task、Focused/Consolidation Training比率を設定できる設計とします。
+
+
+## 13. Modelを使わないRecommendation
+
+Taskに対して、学習モデルが不要な場合はRule/Search/Template等を候補にします。
+
+例:
+
+```text
+「Helpから答えを探す」
+ -> Exact/Keyword Search
+ -> BM25/Retrieval
+ -> Embedding + Ranker
+ -> LLM
+```
+
+のように、必要以上に重い方式を最初から選ばせません。
+
+詳細は `docs/design/beginner-action-ui.md` と `docs/design/language-processing-method-catalog.md`。
