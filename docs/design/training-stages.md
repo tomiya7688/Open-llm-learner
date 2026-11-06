@@ -93,3 +93,21 @@ UI上のWizardだけに閉じ込めません。
 Training PipelineはFlowで表現可能です。
 
 ただしModel Builderは利用者がNodeを一つずつ組まなくても標準Flowを生成します。
+
+
+## 10. Compression Cycle
+
+Training Pipelineは反復Compression Stageを持てます。
+
+```text
+profile
+ -> prune
+ -> compact
+ -> recover
+ -> evaluate
+ -> promote / rollback
+```
+
+各CycleのParent Artifact、Profile Artifact、Prune Plan、Evaluationを保存します。
+
+Cycle全体をLoopとして表現しても、Model Builderが展開した明示Stage群として保存しても構いません。
