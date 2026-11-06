@@ -37,6 +37,10 @@ Weight Export / Runtime Export / AI Package
 
 - [製品の方向性](product-direction.md)
 - [TaskとModel Capability](model-tasks.md)
+- [初心者向け「やりたいこと」選択UI](beginner-action-ui.md)
+- [Task Composition](task-composition.md)
+- [言語処理手法カタログ](language-processing-method-catalog.md)
+- [非Transformer Model Recipe](non-transformer-recipes.md)
 - [Standard Task Catalog](standard-task-catalog.md)
 - [Official Model Recipe Catalog](official-recipe-catalog.md)
 - [Contextと構造化Input](context-and-structured-input.md)
