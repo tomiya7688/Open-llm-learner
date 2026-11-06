@@ -35,6 +35,8 @@ Weight Export / Runtime Export / AI Package
 
 ## 1. 製品・概念設計
 
+- [Naming / Repository Name](naming.md)
+
 - [製品の方向性](product-direction.md)
 - [TaskとModel Capability](model-tasks.md)
 - [初心者向け「やりたいこと」選択UI](beginner-action-ui.md)
