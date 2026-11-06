@@ -201,3 +201,16 @@ ollm export ...
 ```
 
 実際のCommand名はCLI設計時に固定します。
+
+
+## 12. Continual Learning Capacity Policy
+
+継続学習ではCapacity Policyを選べます。
+
+- **Grow** — 新しいCapacityを追加しModelを大きくする。
+- **Compress** — 低価値Capacityを削除しModelを小さくする。
+- **Recycle** — 低価値Capacityを削除し、同じParameter Budget内でFresh Capacityへ置換する。
+
+Recycleでは、例えば3B Modelから0.5Bを削り、その0.5Bを新しいTaskへ重点学習するFresh Capacityとして再配置できます。
+
+Model Builderは総Parameter Budget、Recycle量、Protected Task、Focused/Consolidation Training比率を設定できる設計とします。
