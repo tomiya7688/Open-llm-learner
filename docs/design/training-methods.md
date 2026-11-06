@@ -200,3 +200,27 @@ MoE:
 実際の小型化・高速化を目的とするため、単にWeightを0にするだけでRuntime costが下がらない場合は成功扱いしません。
 
 詳細は `docs/design/iterative-prune-retrain.md`。
+
+
+## 13. Fixed-Budget Capacity Recycling
+
+総Parameter Budgetを固定し、低価値Structureを削除して同じParameter分をFresh Capacityへ再配置するTraining Policyです。
+
+```text
+3.0B
+ -> remove low-value 0.5B
+ -> retained 2.5B
+ -> allocate fresh 0.5B
+ -> focused training
+ -> consolidation
+ -> new 3.0B
+```
+
+これはCompressionではありません。
+
+- Compression: Modelを小さくする。
+- Recycling: Model sizeを維持しながらCapacityの役割を入れ替える。
+
+Retained Parameterはfrozen/low LR、Fresh Parameterは高いLearning Rateで重点学習し、その後Joint Consolidationできます。
+
+詳細は `docs/design/capacity-recycling.md`。
