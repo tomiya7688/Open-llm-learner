@@ -43,6 +43,7 @@ Weight Export / Runtime Export / AI Package
 - [複数Modelの組み合わせ](model-composition.md)
 - [小型用途特化モデル戦略](small-model-strategy.md)
 - [反復Prune / Retrain](iterative-prune-retrain.md)
+- [Capacity Recycling / Structural Reallocation](capacity-recycling.md)
 - [Model Size / Resource Budget](model-size-and-budget.md)
 
 ## 2. Model Builder
