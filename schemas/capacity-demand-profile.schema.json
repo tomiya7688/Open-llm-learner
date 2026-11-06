@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-llm-learner.local/schemas/capacity-demand-profile.schema.json",
+  "title": "Open LLM Learner Capacity Demand Profile",
+  "type": "object",
+  "required": [
+    "format",
+    "format_version",
+    "model_ref",
+    "task_or_dataset_ref",
+    "units"
+  ],
+  "properties": {
+    "format": {
+      "const": "open-llm-learner.capacity-demand-profile"
+    },
+    "format_version": {
+      "const": 1
+    },
+    "model_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_or_dataset_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "strategy": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "units": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "metrics"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "metrics": {
+            "type": "object",
+            "additionalProperties": {
+              "type": [
+                "number",
+                "integer",
+                "boolean",
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
