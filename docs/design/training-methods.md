@@ -168,3 +168,35 @@ Distillation
 ```
 
 Flow/Coreはどの方法で作ったかを前提にしません。
+
+
+## 12. Iterative Prune / Retrain
+
+学習済みModelをUsage Profileし、重要度の低い構造を削除して再学習するCycleをTraining Method / Pipelineとして扱えます。
+
+```text
+Train
+ -> Profile
+ -> Structured Prune
+ -> Compact
+ -> Recovery Retrain
+ -> Evaluate
+ -> repeat
+```
+
+削除対象はArchitectureにより異なります。
+
+Dense Transformer:
+- attention heads;
+- MLP neurons/groups;
+- hidden dimensions;
+- layers/blocks.
+
+MoE:
+- experts;
+- expert groups;
+- router paths.
+
+実際の小型化・高速化を目的とするため、単にWeightを0にするだけでRuntime costが下がらない場合は成功扱いしません。
+
+詳細は `docs/design/iterative-prune-retrain.md`。
