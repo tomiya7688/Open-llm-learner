@@ -63,6 +63,34 @@
     "metadata": {
       "type": "object",
       "additionalProperties": true
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "beginner_phrases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "locale",
+          "text"
+        ],
+        "properties": {
+          "locale": {
+            "type": "string",
+            "minLength": 2
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      }
     }
   },
   "additionalProperties": false
