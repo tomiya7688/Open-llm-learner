@@ -121,3 +121,19 @@ PackageはArtifactを:
 として取り込めます。
 
 Packageを削除してもCanonical Weightは別物です。
+
+
+## 12. Compressed descendants
+
+Canonical ArtifactからPruningで派生したModelはlineageを持ちます。
+
+```text
+3B canonical
+ -> 2B compressed
+ -> 1B compressed
+ -> 500M compressed
+```
+
+各descendantは独立したportable Model Artifactです。
+
+Parentを消しても利用可能な形式でExportできますが、再現性のため変換metadataは保持します。
