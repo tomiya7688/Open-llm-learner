@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-llm-learner.local/schemas/capability-retention.schema.json",
+  "title": "Open LLM Learner Capability Retention Policy",
+  "type": "object",
+  "required": [
+    "format",
+    "format_version",
+    "id",
+    "protected_tasks"
+  ],
+  "properties": {
+    "format": {
+      "const": "open-llm-learner.capability-retention"
+    },
+    "format_version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "protected_tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "task",
+          "max_drop"
+        ],
+        "properties": {
+          "task": {
+            "type": "string",
+            "minLength": 1
+          },
+          "variant": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dataset_ref": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "max_drop": {
+            "type": "number",
+            "minimum": 0
+          },
+          "minimum_score": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 0
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "overall_max_drop": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "rare_case_dataset_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "protected_structures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
