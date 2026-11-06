@@ -514,3 +514,138 @@ Open LLM Learnerでの特徴は、それらを一つのAlgorithmへ固定せず:
 - Iterative Cycle;
 
 として交換可能なModel Builder Pipelineにすることです。
+
+
+## 24. 継続学習を重くしにくくする
+
+この方式の重要な目的の一つは、継続的に学習を繰り返すModelのTraining Costを抑えることです。
+
+通常の継続学習では、元Modelの大きさを維持したままDatasetやTaskを追加すると、毎Cycle:
+
+- Forward cost;
+- Backward cost;
+- optimizer state;
+- checkpoint size;
+- Runtime memory;
+
+が大きいまま残ります。
+
+Iterative Prune / Retrainでは、各Cycle後にModel自体をCompactにするため:
+
+```text
+Train N
+ -> Compact N
+ -> Train N+1 on smaller model
+ -> Compact N+1
+ -> ...
+```
+
+となり、次回学習の基礎Costを下げられます。
+
+これは単なるInference Compressionではなく、**次のTrainingを軽くするためのCompression**でもあります。
+
+## 25. 必要な要素を残すためのRetention Contract
+
+「よく使われる構造を残す」だけでは不十分です。
+
+Rareだが重要な能力を守るため、ProjectはRetention Contractを持てます。
+
+例:
+
+```json
+{
+  "protected_tasks": [
+    "safety-critical-format",
+    "rare-code-edit",
+    "fallback-help"
+  ],
+  "max_drop": {
+    "overall": 0.02,
+    "protected": 0.005
+  }
+}
+```
+
+Prune Candidateは通常TaskだけでなくProtected Taskでも評価します。
+
+## 26. Rare-case Buffer
+
+Profile Datasetとは別に、削除判定に使うRare-case / Canary Datasetを持てます。
+
+用途:
+
+- 低頻度だが重要な入力;
+- 異常系;
+- edge case;
+- fallback behavior;
+-安全上重要な判断;
+- 将来残したい汎用能力.
+
+Prune PlanがRare-case評価を大きく落とす場合、その構造は使用頻度が低くても保護できます。
+
+## 27. Parent Artifactを残す
+
+Pruningは完全に不可逆な操作として扱いません。
+
+各Cycleで:
+
+```text
+Parent Model
+   ↓
+Candidate Prune
+   ↓
+Child Model
+```
+
+のlineageを残します。
+
+Childで失われた能力が後から判明した場合:
+
+- ParentへRollback;
+- 別Prune Planからやり直す;
+- ParentをTeacherにして能力を再蒸留する;
+
+ことができます。
+
+## 28. Capability Regression Test
+
+Model BuilderはCompression前後でCapabilityごとのRegressionを比較できます。
+
+例:
+
+```text
+Capability                  Before   After
+code.transform               0.94     0.93
+decision.evaluate            0.91     0.91
+rare.config.edit             0.87     0.72  <- reject
+```
+
+平均Scoreだけで採用しません。
+
+## 29. Protected Structureは最後の手段
+
+特定Head/Layer/Expertを手動で保護することもできますが、最初からArchitecture内部を人が固定するより:
+
+1. Protected Taskを定義;
+2. Rare-case評価;
+3. sensitivityを測る;
+4. それでも必要ならStructureをpin;
+
+の順を推奨します。
+
+## 30. 将来のRegrowth
+
+一度削った構造を同じWeightとして復活させることは簡単ではありません。
+
+ただし将来的には:
+
+- pruned parentから再分岐;
+-新規小規模Block/Expertを追加;
+- adapter capacityを追加;
+- teacher distillationで不足能力を再獲得;
+
+のようなRegrowth/Expansion StageをTraining Pipelineへ追加できます。
+
+重要なのは、**現在の小さいModelを永久に唯一の系譜としないこと**です。
+
+Model Family / Parent lineageを保持しておけば、Compact化と再拡張の両方を選べます。
