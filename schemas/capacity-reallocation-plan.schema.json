@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-llm-learner.local/schemas/capacity-reallocation-plan.schema.json",
+  "title": "Open LLM Learner Capacity Reallocation Plan",
+  "type": "object",
+  "required": [
+    "format",
+    "format_version",
+    "source_model_ref",
+    "total_parameter_budget",
+    "remove",
+    "allocate"
+  ],
+  "properties": {
+    "format": {
+      "const": "open-llm-learner.capacity-reallocation-plan"
+    },
+    "format_version": {
+      "const": 1
+    },
+    "source_model_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "usage_profile_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "demand_profile_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "total_parameter_budget": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "recycle_target_parameters": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "remove": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "allocate": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "plasticity_policy": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "focused_training": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "consolidation": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "retention_policy_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "estimated_result": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
