@@ -42,6 +42,7 @@ Weight Export / Runtime Export / AI Package
 - [初心者向け「やりたいこと」選択UI](beginner-action-ui.md)
 - [Task Composition](task-composition.md)
 - [言語処理手法カタログ](language-processing-method-catalog.md)
+- [手法選択マトリクス](method-selection-matrix.md)
 - [非Transformer Model Recipe](non-transformer-recipes.md)
 - [Standard Task Catalog](standard-task-catalog.md)
 - [Official Model Recipe Catalog](official-recipe-catalog.md)
